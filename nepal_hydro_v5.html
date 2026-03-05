@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Nepal Hydropower Registry · DoED Live Data</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--p1:#161b22;--p2:#1c2128;
+  --b1:#30363d;--b2:#21262d;
+  --t1:#e6edf3;--t2:#8b949e;--t3:#6e7681;
+  --acc:#58a6ff;--acc2:#1f6feb;
+  --cs:#f0883e;--cas:#e3b341;--cc:#a78bfa;--cac:#c084fc;--co:#4ade80;
+  --r:5px;--fh:'Syne',sans-serif;--fd:'JetBrains Mono',monospace;--f:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);color:var(--t1);font-size:13px}
+
+/* ── LOADER ── */
+#ldr{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .5s}
+#ldr.gone{opacity:0;pointer-events:none}
+.ldr-logo{font-family:var(--fh);font-size:2rem;font-weight:800;letter-spacing:-.03em}
+.ldr-logo em{color:var(--acc);font-style:normal}
+.ldr-bar{width:300px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden}
+.ldr-fill{height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));width:0%;transition:width .3s}
+.ldr-items{display:flex;flex-direction:column;gap:4px;width:300px}
+.ldi{display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--t3);font-family:var(--fd)}
+.ldi .d{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--b1);transition:background .3s}
+.ldi.ld .d{background:var(--acc);animation:bk 1s infinite}
+.ldi.ok .d{background:var(--co)}.ldi.ok{color:var(--co)}
+.ldi.fail .d{background:#f85149}.ldi.fail{color:#f85149}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── TOP BAR ── */
+#bar{height:42px;display:flex;align-items:center;padding:0 14px;background:var(--p1);border-bottom:1px solid var(--b1);gap:10px;flex-shrink:0}
+.bar-logo{font-family:var(--fh);font-weight:800;font-size:.95rem;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.bar-logo em{color:var(--acc);font-style:normal}
+.bar-src{font-size:.58rem;color:var(--t3);font-family:var(--fd);border-left:1px solid var(--b2);padding-left:10px;white-space:nowrap}
+.kpis{display:flex;flex:1;overflow:hidden}
+.kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 10px;border-left:1px solid var(--b2);flex-shrink:0}
+.kpi .v{font-family:var(--fd);font-size:.88rem;font-weight:500;line-height:1}
+.kpi .l{font-size:.52rem;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-top:2px;white-space:nowrap}
+.kpi.ks .v{color:var(--cs)}.kpi.kas .v{color:var(--cas)}
+.kpi.kc .v{color:var(--cc)}.kpi.kac .v{color:var(--cac)}
+.kpi.ko .v{color:var(--co)}.kpi.kt .v{color:var(--acc)}
+.bar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.live{display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--co);font-family:var(--fd)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--co);animation:bk 2s infinite}
+#ts{font-size:.6rem;color:var(--t3);font-family:var(--fd);white-space:nowrap}
+.btn{background:var(--p2);border:1px solid var(--b1);color:var(--t2);border-radius:var(--r);padding:4px 10px;font-size:.7rem;font-family:var(--f);cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--b1);color:var(--t1)}
+.btn.sp .ri{display:inline-block;animation:rot .5s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── LAYOUT ── */
+#shell{display:flex;height:calc(100vh - 42px);overflow:hidden}
+.panel{background:var(--p1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#lp{width:265px;min-width:155px;max-width:480px;border-right:1px solid var(--b1)}
+#rp{width:272px;min-width:155px;max-width:480px;border-left:1px solid var(--b1)}
+#cp{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:200px}
+
+/* HANDLES */
+.vh{width:5px;background:var(--b2);cursor:col-resize;flex-shrink:0;transition:background .15s;z-index:10}
+.vh:hover,.vh.on{background:var(--acc)}
+.hh{height:5px;background:var(--b2);cursor:row-resize;flex-shrink:0;transition:background .15s}
+.hh:hover,.hh.on{background:var(--acc)}
+
+/* SCROLL */
+.psc{flex:1;overflow-y:auto;overflow-x:hidden}
+.psc::-webkit-scrollbar{width:4px}
+.psc::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
+
+/* SECTIONS */
+.sec{padding:10px 12px;border-bottom:1px solid var(--b2)}
+.sh{font-family:var(--fh);font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.sh a{color:var(--acc);font-size:.57rem;font-weight:400;text-decoration:none}
+.sh a:hover{text-decoration:underline}
+
+/* SEARCH */
+.srch{position:relative}
+.srch svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;stroke:var(--t3);fill:none;stroke-width:2;stroke-linecap:round}
+.srch input{width:100%;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);padding:6px 8px 6px 26px;color:var(--t1);font-size:.77rem;font-family:var(--f);outline:none;transition:border-color .15s}
+.srch input::placeholder{color:var(--t3)}
+.srch input:focus{border-color:var(--acc)}
+
+/* STAGE BTNS */
+.stgs{display:flex;flex-direction:column;gap:3px}
+.sg{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:var(--r);border:1px solid var(--b1);background:none;cursor:pointer;font-family:var(--f);font-size:.71rem;color:var(--t2);width:100%;text-align:left;transition:all .15s}
+.sg:hover{color:var(--t1);border-color:var(--t3)}
+.sg.on{color:var(--t1)}
+.sg.on[data-s=survey]{background:rgba(240,136,62,.1);border-color:var(--cs)}
+.sg.on[data-s=appsurvey]{background:rgba(227,179,65,.1);border-color:var(--cas)}
+.sg.on[data-s=construction]{background:rgba(167,139,250,.1);border-color:var(--cc)}
+.sg.on[data-s=appconstruction]{background:rgba(192,132,252,.1);border-color:var(--cac)}
+.sg.on[data-s=operational]{background:rgba(74,222,128,.08);border-color:var(--co)}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.scnt{margin-left:auto;font-family:var(--fd);font-size:.62rem;color:var(--t3)}
+
+/* PROVINCE */
+.pvs{display:flex;flex-wrap:wrap;gap:3px}
+.pv{padding:2px 8px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
+.pv:hover{border-color:var(--t3);color:var(--t1)}
+.pv.on{background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
+
+/* MW */
+.mwqs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px}
+.mwq{padding:2px 7px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
+.mwq:hover,.mwq.on{background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
+.rr{display:flex;gap:5px;align-items:center}
+.rr input{flex:1;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);padding:5px 7px;color:var(--t1);font-family:var(--fd);font-size:.7rem;outline:none;min-width:0;-moz-appearance:textfield}
+.rr input:focus{border-color:var(--acc)}
+.rsep{color:var(--t3);font-size:.7rem}
+
+/* MAP BASE */
+.bbs{display:flex;flex-wrap:wrap;gap:3px}
+.bb{padding:2px 8px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
+.bb:hover{color:var(--t1);border-color:var(--t3)}
+.bb.on{background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
+
+/* LAYERS */
+.lyrs{display:flex;flex-direction:column;gap:4px}
+.lyr{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);border:1px solid var(--b1);font-size:.71rem;color:var(--t2);cursor:pointer;user-select:none;transition:border-color .15s}
+.lyr:hover{border-color:var(--t3);color:var(--t1)}
+.lyr input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:13px;height:13px}
+
+/* SOURCES */
+.srcl{display:flex;flex-direction:column;gap:3px}
+.sri{display:flex;align-items:center;gap:6px;font-size:.67rem;font-family:var(--fd);color:var(--t3)}
+.sri a{color:var(--acc);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem}
+.sri a:hover{text-decoration:underline}
+.sdot2{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.sst{font-size:.6rem;flex-shrink:0}
+
+/* ACTIONS */
+.ar{display:flex;gap:5px}
+.ab{flex:1;padding:6px 8px;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);color:var(--t2);font-family:var(--f);font-size:.71rem;cursor:pointer;transition:all .15s;text-align:center}
+.ab:hover{background:var(--b1);color:var(--t1)}
+.ab.pr{background:var(--acc2);border-color:var(--acc);color:#fff}
+.ab.pr:hover{background:var(--acc)}
+
+/* MAP */
+#mapbox{flex:1;min-height:80px;position:relative;overflow:hidden}
+#map{width:100%;height:100%;background:#0d1117}
+.mov{position:absolute;z-index:900;background:rgba(13,17,23,.9);border:1px solid var(--b1);border-radius:var(--r);backdrop-filter:blur(6px)}
+#map-leg{bottom:30px;left:10px;padding:8px 11px}
+.lr{display:flex;align-items:center;gap:6px;font-size:.65rem;color:var(--t2);margin-bottom:3px}
+.lr:last-child{margin:0}
+.ld2{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#map-sb{top:10px;left:50%;transform:translateX(-50%);padding:4px 12px;font-size:.66rem;color:var(--t2);font-family:var(--fd);white-space:nowrap;pointer-events:none;max-width:70%;overflow:hidden;text-overflow:ellipsis}
+
+/* TABLE PANEL */
+#tp{min-height:60px;background:var(--p1);display:flex;flex-direction:column;border-top:1px solid var(--b1)}
+.tbar{display:flex;align-items:center;padding:5px 12px;border-bottom:1px solid var(--b1);gap:8px;flex-shrink:0;height:33px}
+.ti{font-family:var(--fd);font-size:.68rem;color:var(--t3)}
+.ti strong{color:var(--t1)}.ti .mwv{color:var(--acc)}
+.tbar-r{margin-left:auto;display:flex;gap:4px}
+.tsc{flex:1;overflow:auto}
+.tsc::-webkit-scrollbar{width:5px;height:5px}
+.tsc::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
+
+table.dt{width:100%;border-collapse:collapse;font-size:.7rem;table-layout:fixed}
+table.dt th{position:sticky;top:0;z-index:2;background:var(--p2);color:var(--t3);padding:5px 8px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1);font-family:var(--fd);font-size:.59rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;transition:color .15s;overflow:hidden;text-overflow:ellipsis}
+table.dt th:hover{color:var(--t1)}
+/* Fixed column widths — table never reflows when cells are empty */
+table.dt th:nth-child(1){width:220px}   /* Project */
+table.dt th:nth-child(2){width:64px}    /* MW */
+table.dt th:nth-child(3){width:110px}   /* Stage */
+table.dt th:nth-child(4){width:90px}    /* Lic/App No */
+table.dt th:nth-child(5){width:90px}    /* Issue Date */
+table.dt th:nth-child(6){width:90px}    /* Validity */
+table.dt th:nth-child(7){width:110px}   /* River */
+table.dt th:nth-child(8){width:160px}   /* Promoter */
+table.dt th:nth-child(9){width:130px}   /* Address */
+table.dt th:nth-child(10){width:90px}   /* Lat N start */
+table.dt th:nth-child(11){width:90px}   /* Lat N end */
+table.dt th:nth-child(12){width:90px}   /* Lon E start */
+table.dt th:nth-child(13){width:90px}   /* Lon E end */
+table.dt th:nth-child(14){width:200px}  /* VDC/District */
+table.dt th:nth-child(15){width:110px}  /* Province */
+table.dt td{padding:5px 8px;border-bottom:1px solid var(--b2);white-space:nowrap;color:var(--t2);vertical-align:middle;font-size:.7rem;overflow:hidden;text-overflow:ellipsis}
+table.dt td.nm{font-weight:500;color:var(--t1);cursor:pointer}
+table.dt td.nm:hover{color:var(--acc);text-decoration:underline}
+table.dt td.mwcol{font-family:var(--fd);font-weight:500;color:var(--acc)}
+table.dt td.coord{font-family:var(--fd);font-size:.65rem;color:var(--t3)}
+table.dt td.vdc{font-size:.67rem}
+table.dt tr:hover td{background:rgba(88,166,255,.05)}
+table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
+.thn::after{content:' ⇅';opacity:.2;font-size:.5rem}
+.tha::after{content:' ▲';opacity:.8;font-size:.5rem}
+.thd::after{content:' ▼';opacity:.8;font-size:.5rem}
+.tag{display:inline-block;padding:1px 5px;border-radius:2px;font-size:.58rem;font-weight:600;font-family:var(--fd)}
+.tg-s{background:rgba(240,136,62,.12);color:var(--cs)}
+.tg-as{background:rgba(227,179,65,.12);color:var(--cas)}
+.tg-c{background:rgba(167,139,250,.12);color:var(--cc)}
+.tg-ac{background:rgba(192,132,252,.12);color:var(--cac)}
+.tg-o{background:rgba(74,222,128,.1);color:var(--co)}
+
+/* RIGHT PANEL — detail as column-heading rows */
+#det{padding:0;border-bottom:1px solid var(--b2);overflow:hidden}
+.det-emp{color:var(--t3);font-size:.73rem;font-style:italic;text-align:center;padding:28px 12px}
+.det-head{padding:10px 12px 8px;border-bottom:1px solid var(--b2)}
+.det-name{font-family:var(--fh);font-size:.9rem;font-weight:700;color:var(--t1);line-height:1.35;margin-bottom:5px}
+.det-tag{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:3px;font-size:.6rem;font-weight:600;font-family:var(--fd)}
+/* Property rows — like a mini table with column headings */
+.det-table{width:100%;border-collapse:collapse}
+.det-table tr{border-bottom:1px solid var(--b2)}
+.det-table tr:last-child{border-bottom:none}
+.det-table th{padding:5px 12px;font-size:.55rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);text-align:left;background:var(--p2);width:38%;white-space:nowrap;vertical-align:top}
+.det-table td{padding:5px 12px;font-family:var(--fd);font-size:.69rem;color:var(--t1);word-break:break-word;line-height:1.5;vertical-align:top}
+.det-table td.big{font-size:.95rem;font-weight:600;color:var(--acc)}
+.det-sect{padding:5px 12px 3px;font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);background:var(--b2);border-bottom:1px solid var(--b1)}
+.det-gmaps{display:block;padding:7px 12px;font-size:.67rem;font-family:var(--fd);color:var(--acc);text-decoration:none;border-top:1px solid var(--b2)}
+.det-gmaps:hover{background:rgba(88,166,255,.06)}
+
+/* CHARTS */
+.csec{padding:10px 12px;border-bottom:1px solid var(--b2)}
+.csec h5{font-family:var(--fh);font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:8px}
+.cbar{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.cbar:last-child{margin:0}
+.cbl{font-size:.63rem;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:72px;flex-shrink:0}
+.cbt{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.cbf{height:100%;border-radius:2px;transition:width .5s ease}
+.cbv{font-family:var(--fd);font-size:.61rem;color:var(--t2);width:36px;text-align:right;flex-shrink:0}
+
+/* LEAFLET */
+.leaflet-container{background:#0d1117!important}
+.leaflet-control-zoom a{background:var(--p2)!important;color:var(--t1)!important;border-color:var(--b1)!important}
+.leaflet-control-zoom a:hover{background:var(--b1)!important}
+.leaflet-control-attribution{background:rgba(13,17,23,.8)!important;color:var(--t3)!important;font-size:.5rem!important}
+.leaflet-control-attribution a{color:var(--acc)!important}
+.leaflet-popup-content-wrapper{background:var(--p1)!important;border:1px solid var(--b1)!important;border-radius:var(--r)!important;box-shadow:0 8px 32px rgba(0,0,0,.7)!important}
+.leaflet-popup-tip{background:var(--p1)!important}
+.leaflet-popup-content{margin:10px 13px!important;font-family:var(--f)!important;color:var(--t1)!important;font-size:.77rem!important}
+.leaflet-popup-close-button{color:var(--t3)!important;right:6px!important;top:5px!important}
+</style>
+</head>
+<body>
+
+<div id="ldr">
+  <div class="ldr-logo">Nepal<em>Hydro</em></div>
+  <div class="ldr-bar"><div class="ldr-fill" id="ldr-fill"></div></div>
+  <div class="ldr-items" id="ldr-items">
+    <div class="ldi ld"><div class="d"></div><span>Connecting to doed.gov.np…</span></div>
+  </div>
+</div>
+
+<div id="bar">
+  <div class="bar-logo">🇳🇵 Nepal<em>Hydro</em></div>
+  <div class="bar-src">LIVE · DOED.GOV.NP</div>
+  <div class="kpis">
+    <div class="kpi ks"><div class="v" id="kv-s">—</div><div class="l">Survey</div></div>
+    <div class="kpi kas"><div class="v" id="kv-as">—</div><div class="l">App.Survey</div></div>
+    <div class="kpi kc"><div class="v" id="kv-c">—</div><div class="l">Constr.</div></div>
+    <div class="kpi kac"><div class="v" id="kv-ac">—</div><div class="l">App.Constr.</div></div>
+    <div class="kpi ko"><div class="v" id="kv-o">—</div><div class="l">Operational</div></div>
+    <div class="kpi kt"><div class="v" id="kv-t">—</div><div class="l">Total</div></div>
+  </div>
+  <div class="bar-r">
+    <div class="live"><div class="live-dot"></div>LIVE</div>
+    <span id="ts">—</span>
+    <button class="btn" id="btn-ref" onclick="boot()"><span class="ri">↻</span> Refresh</button>
+  </div>
+</div>
+
+<div id="shell">
+
+  <!-- LEFT -->
+  <div class="panel" id="lp">
+    <div class="psc">
+
+      <div class="sec">
+        <div class="sh">Search</div>
+        <div class="srch">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="fq" placeholder="Name, river, district…" autocomplete="off"/>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Stage</div>
+        <div class="stgs">
+          <button class="sg on" data-s="survey"><span class="sdot" style="background:var(--cs)"></span>Survey License<span class="scnt" id="cn-s">—</span></button>
+          <button class="sg on" data-s="appsurvey"><span class="sdot" style="background:var(--cas)"></span>App. Survey<span class="scnt" id="cn-as">—</span></button>
+          <button class="sg on" data-s="construction"><span class="sdot" style="background:var(--cc)"></span>Construction<span class="scnt" id="cn-c">—</span></button>
+          <button class="sg on" data-s="appconstruction"><span class="sdot" style="background:var(--cac)"></span>App. Construction<span class="scnt" id="cn-ac">—</span></button>
+          <button class="sg on" data-s="operational"><span class="sdot" style="background:var(--co)"></span>Operational<span class="scnt" id="cn-o">—</span></button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Province</div>
+        <div class="pvs">
+          <button class="pv on" data-pv="all">All</button>
+          <button class="pv" data-pv="Koshi">Koshi</button>
+          <button class="pv" data-pv="Madhesh">Madhesh</button>
+          <button class="pv" data-pv="Bagmati">Bagmati</button>
+          <button class="pv" data-pv="Gandaki">Gandaki</button>
+          <button class="pv" data-pv="Lumbini">Lumbini</button>
+          <button class="pv" data-pv="Karnali">Karnali</button>
+          <button class="pv" data-pv="Sudurpaschim">Sudurpaschim</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Capacity (MW)</div>
+        <div class="mwqs">
+          <button class="mwq on" data-mw="all">All</button>
+          <button class="mwq" data-mw="0,1">&lt;1</button>
+          <button class="mwq" data-mw="1,10">1–10</button>
+          <button class="mwq" data-mw="10,100">10–100</button>
+          <button class="mwq" data-mw="100,1000">100–1000</button>
+          <button class="mwq" data-mw="1000,999999">&gt;1000</button>
+        </div>
+        <div class="rr">
+          <input id="fmin" type="number" placeholder="Min" min="0"/>
+          <span class="rsep">–</span>
+          <input id="fmax" type="number" placeholder="Max"/>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Base Map</div>
+        <div class="bbs">
+          <button class="bb on" data-base="osm">OpenStreetMap</button>
+          <button class="bb" data-base="topo">Topo</button>
+          <button class="bb" data-base="esri">Satellite</button>
+          <button class="bb" data-base="dark">Dark</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Map Layers</div>
+        <div class="lyrs">
+          <label class="lyr"><input type="checkbox" id="lmk" checked/> Project Markers</label>
+          <label class="lyr"><input type="checkbox" id="lbd" checked/> Project Boundaries</label>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Actions</div>
+        <div class="ar">
+          <button class="ab" onclick="resetAll()">↺ Reset</button>
+          <button class="ab pr" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sh">Live Sources <a href="https://doed.gov.np" target="_blank">doed.gov.np ↗</a></div>
+        <div class="srcl" id="srcl"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vh" id="vh-l"></div>
+
+  <!-- CENTER -->
+  <div id="cp">
+    <div id="mapbox">
+      <div id="map"></div>
+      <div class="mov" id="map-leg">
+        <div class="lr"><div class="ld2" style="background:var(--cs)"></div>Survey</div>
+        <div class="lr"><div class="ld2" style="background:var(--cas)"></div>App. Survey</div>
+        <div class="lr"><div class="ld2" style="background:var(--cc)"></div>Construction</div>
+        <div class="lr"><div class="ld2" style="background:var(--cac)"></div>App. Constr.</div>
+        <div class="lr"><div class="ld2" style="background:var(--co)"></div>Operational</div>
+        <div class="lr" style="margin-top:4px;font-size:.57rem;color:var(--t3)">● size ∝ MW · dashed = boundary</div>
+      </div>
+      <div class="mov" id="map-sb">Click a marker or row to select</div>
+    </div>
+
+    <div class="hh" id="hh"></div>
+
+    <div id="tp" style="height:290px">
+      <div class="tbar">
+        <span class="ti">
+          Showing <strong id="t-sn">—</strong> / <strong id="t-to">—</strong> ·
+          <span class="mwv" id="t-mw">— MW</span>
+        </span>
+        <div class="tbar-r">
+          <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+          <a class="btn" href="https://doed.gov.np" target="_blank">↗ DoED</a>
+        </div>
+      </div>
+      <div class="tsc">
+        <table class="dt" id="dt">
+          <thead><tr>
+            <th class="thn" data-col="name">Project</th>
+            <th class="thn" data-col="mw">MW</th>
+            <th class="thn" data-col="stage">Stage</th>
+            <th class="thn" data-col="licno">Lic/App No</th>
+            <th class="thn" data-col="issue">Issue Date</th>
+            <th class="thn" data-col="validity">Validity</th>
+            <th class="thn" data-col="river">River</th>
+            <th class="thn" data-col="promoter">Promoter</th>
+            <th class="thn" data-col="address">Address</th>
+            <th class="thn" data-col="lat1">Lat N (start)</th>
+            <th class="thn" data-col="lat2">Lat N (end)</th>
+            <th class="thn" data-col="lon1">Lon E (start)</th>
+            <th class="thn" data-col="lon2">Lon E (end)</th>
+            <th class="thn" data-col="vdc">VDC / District</th>
+            <th class="thn" data-col="province">Province</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="vh" id="vh-r"></div>
+
+  <!-- RIGHT -->
+  <div class="panel" id="rp">
+    <div class="psc">
+      <div id="det"><div class="det-emp">Click a project to view details</div></div>
+      <div class="csec"><h5>Stage Distribution</h5><div id="ch-s"></div></div>
+      <div class="csec"><h5>MW by Stage</h5><div id="ch-mw"></div></div>
+      <div class="csec"><h5>Top Districts</h5><div id="ch-d"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){'use strict';
+
+/* ══ CONFIG ══ */
+var SCFG={
+  survey:         {label:'Survey License',    color:'#f0883e',tcls:'tg-s'},
+  appsurvey:      {label:'App. Survey',       color:'#e3b341',tcls:'tg-as'},
+  construction:   {label:'Construction',      color:'#a78bfa',tcls:'tg-c'},
+  appconstruction:{label:'App. Construction', color:'#c084fc',tcls:'tg-ac'},
+  operational:    {label:'Operational',       color:'#4ade80',tcls:'tg-o'}
+};
+
+var SRCS=[
+  {id:'s1', label:'Survey >1MW',       url:'https://doed.gov.np/pages/hydromorethan1/',       stg:'survey'},
+  {id:'s2', label:'Survey <1MW',       url:'https://doed.gov.np/pages/hydrolessthan1/',       stg:'survey'},
+  {id:'as1',label:'App.Survey >1MW',   url:'https://doed.gov.np/pages/appslhydromorethan1/', stg:'appsurvey'},
+  {id:'as2',label:'App.Survey <1MW',   url:'https://doed.gov.np/pages/appslhydrolessthan1/',stg:'appsurvey'},
+  {id:'c1', label:'Construction >1MW', url:'https://doed.gov.np/pages/clhydromorethan1/',    stg:'construction'},
+  {id:'c2', label:'Construction <1MW', url:'https://doed.gov.np/pages/clhydrolessthan1/',    stg:'construction'},
+  {id:'ac1',label:'App.Constr.(all)',   url:'https://doed.gov.np/pages/appclhydro/',           stg:'appconstruction'},
+  {id:'o1', label:'Power Plants >1MW', url:'https://doed.gov.np/pages/powerplantsmorethan1/',stg:'operational'},
+  {id:'o2', label:'Power Plants <1MW', url:'https://doed.gov.np/pages/powerplantslessthan1/',stg:'operational'}
+];
+
+/* ══ PROXY POOL — tried in order, auto-rotated per source ══
+   Each proxy wraps the target URL differently.
+   We shuffle so all 9 sources don't hammer the same proxy simultaneously. */
+var PROXIES=[
+  {pfx:'https://corsproxy.io/?url=',                enc:true},
+  {pfx:'https://api.allorigins.win/raw?url=',       enc:true},
+  {pfx:'https://api.codetabs.com/v1/proxy?quest=',  enc:false},
+  {pfx:'https://thingproxy.freeboard.io/fetch/',    enc:false},
+  {pfx:'https://cors-anywhere.herokuapp.com/',      enc:false},
+  {pfx:'https://corsproxy.io/?url=',                enc:true},   // retry same best proxy
+  {pfx:'https://api.allorigins.win/raw?url=',       enc:true}    // retry
+];
+
+/* ══ DISTRICT → PROVINCE ══ */
+var DP={
+  TAPLEJUNG:'Koshi',PANCHTHAR:'Koshi',ILAM:'Koshi',JHAPA:'Koshi',MORANG:'Koshi',
+  SUNSARI:'Koshi',DHANKUTA:'Koshi',TERHATHUM:'Koshi',BHOJPUR:'Koshi',
+  SOLUKHUMBU:'Koshi',OKHALDHUNGA:'Koshi',KHOTANG:'Koshi',UDAYAPUR:'Koshi',SANKHUWASABHA:'Koshi',
+  SAPTARI:'Madhesh',SIRAHA:'Madhesh',DHANUSA:'Madhesh',MAHOTTARI:'Madhesh',
+  SARLAHI:'Madhesh',RAUTAHAT:'Madhesh',BARA:'Madhesh',PARSA:'Madhesh',
+  SINDHULI:'Bagmati',RAMECHHAP:'Bagmati',DOLAKHA:'Bagmati',SINDHUPALCHOK:'Bagmati',
+  KAVREPALANCHOK:'Bagmati',KABHREPALANCHOK:'Bagmati',LALITPUR:'Bagmati',
+  BHAKTAPUR:'Bagmati',KATHMANDU:'Bagmati',NUWAKOT:'Bagmati',RASUWA:'Bagmati',
+  DHADING:'Bagmati',MAKWANPUR:'Bagmati',MAKAWANPUR:'Bagmati',CHITWAN:'Bagmati',CHITAWAN:'Bagmati',
+  GORKHA:'Gandaki',LAMJUNG:'Gandaki',TANAHU:'Gandaki',SYANGJA:'Gandaki',KASKI:'Gandaki',
+  MANANG:'Gandaki',MUSTANG:'Gandaki',MYAGDI:'Gandaki',PARBAT:'Gandaki',
+  NAWALPARASI:'Gandaki',BAGLUNG:'Gandaki',NAWALPUR:'Gandaki',
+  RUPANDEHI:'Lumbini',KAPILBASTU:'Lumbini',ARGHAKHANCHI:'Lumbini',PALPA:'Lumbini',
+  GULMI:'Lumbini',PYUTHAN:'Lumbini',ROLPA:'Lumbini',RUKUM:'Lumbini',
+  DANG:'Lumbini',BANKE:'Lumbini',BARDIYA:'Lumbini',
+  SURKHET:'Karnali',DAILEKH:'Karnali',JAJARKOT:'Karnali',DOLPA:'Karnali',
+  JUMLA:'Karnali',KALIKOT:'Karnali',MUGU:'Karnali',SALYAN:'Karnali',HUMLA:'Karnali',
+  BAJURA:'Sudurpaschim',BAJHANG:'Sudurpaschim',ACHHAM:'Sudurpaschim',DOTI:'Sudurpaschim',
+  KAILALI:'Sudurpaschim',KANCHANPUR:'Sudurpaschim',DADELDHURA:'Sudurpaschim',
+  BAITADI:'Sudurpaschim',DARCHULA:'Sudurpaschim'
+};
+function getProv(raw){
+  if(!raw) return '—';
+  var up=raw.toUpperCase();
+  // scan for every known district name inside the raw text
+  for(var k in DP){ if(up.indexOf(k)!==-1) return DP[k]; }
+  return '—';
+}
+
+/* ══ DMS PARSER ══
+   DoED uses literal letter 'o' as degree symbol: "28o 42' 00""
+   We parse D°M'S" → decimal
+══ */
+function dms2dec(s){
+  if(!s) return NaN;
+  s=String(s).trim()
+    .replace(/°/g,'o')
+    .replace(/[''′`]/g,"'")
+    .replace(/[""″]/g,'"');
+  // Match: digits + 'o' + optional minutes + optional seconds
+  var m=s.match(/^(\d{1,3}(?:\.\d+)?)\s*o\s*(?:(\d{1,2}(?:\.\d+)?)\s*'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*"?)?)?/i);
+  if(!m) return NaN;
+  var d=+m[1]||0, mn=+m[2]||0, sc=+m[3]||0;
+  return d + mn/60 + sc/3600;
+}
+function vLat(v){return !isNaN(v)&&v>=25&&v<=32;}
+function vLon(v){return !isNaN(v)&&v>=79&&v<=90;}
+function fDec(v){return isNaN(v)?'':v.toFixed(5);}
+
+/* ══ TABLE PARSER ══
+   The DoED table structure (confirmed from live HTML):
+
+   HEADER ROW has colspan cells:
+     "S No" | "Project" | "Capacity (MW)" | "River" | "Lic No" | "Issue Date" |
+     "Validity" | "Promoter" | "Address" | "Latitude N" [colspan=2] | "Longitude E" [colspan=2] | "VDC/District"
+
+   DATA ROWS always have 14 cells (0-indexed):
+     0:SNo  1:Project  2:MW  3:River  4:LicNo  5:IssueDate  6:Validity
+     7:Promoter  8:Address  9:LatStart  10:LatEnd  11:LonStart  12:LonEnd  13:VDC/District
+
+   App.Survey/Construction pages use "Appn No" and "Appn Date" instead of "Lic No"/"Issue Date"
+   but data row positions are the same.
+
+   We detect which table is the data table by looking for 13-14 td cells in data rows.
+══ */
+function parseTable(html, stage){
+  var doc=(new DOMParser()).parseFromString(html,'text/html');
+  var out=[];
+
+  doc.querySelectorAll('table').forEach(function(tbl){
+    var rows=Array.from(tbl.querySelectorAll('tr'));
+    if(rows.length<3) return;
+
+    // Find first data row with ≥13 cells (skip header rows)
+    var dataStart=-1;
+    for(var i=0;i<rows.length&&i<10;i++){
+      var tds=rows[i].querySelectorAll('td');
+      if(tds.length>=13){ dataStart=i; break; }
+    }
+    if(dataStart<0) return;
+
+    rows.slice(dataStart).forEach(function(r){
+      var cells=Array.from(r.querySelectorAll('td'));
+      if(cells.length<13) return;
+
+      function cv(i){ return cells[i]?cells[i].textContent.trim():''; }
+
+      var name=cv(1);
+      if(!name||name.length<2||/total|जम्मा|grand/i.test(name)) return;
+
+      var mw=parseFloat(cv(2).replace(/,/g,''))||0;
+
+      // ── Coordinates: cols 9,10 = lat range; 11,12 = lon range ──
+      var lat1=dms2dec(cv(9)), lat2=dms2dec(cv(10));
+      var lon1=dms2dec(cv(11)), lon2=dms2dec(cv(12));
+
+      if(!vLat(lat1)) lat1=NaN;
+      if(!vLat(lat2)) lat2=NaN;
+      if(!vLon(lon1)) lon1=NaN;
+      if(!vLon(lon2)) lon2=NaN;
+
+      // Centre = midpoint of boundary box
+      var clat=NaN, clon=NaN;
+      if(!isNaN(lat1)&&!isNaN(lat2)) clat=(lat1+lat2)/2;
+      else if(!isNaN(lat1)) clat=lat1;
+      if(!isNaN(lon1)&&!isNaN(lon2)) clon=(lon1+lon2)/2;
+      else if(!isNaN(lon1)) clon=lon1;
+
+      // ── VDC/District: col 13 — kept EXACTLY as DoED shows it ──
+      var vdcRaw=cv(13); // e.g. "Rahaph,Bhairabsthan (Achham) Santalla (Dailekh)"
+
+      // Extract district names from parentheses for province lookup
+      // but keep vdcRaw intact for display
+      var province=getProv(vdcRaw);
+
+      // Extract first parenthesized district for "District" column
+      var dMatch=vdcRaw.match(/\(([^)]+)\)/);
+      var district=dMatch?dMatch[1].trim():'—';
+      // If multiple districts, list them
+      var allDists=[];
+      var re=/\(([^)]+)\)/g, mm;
+      while((mm=re.exec(vdcRaw))!==null){
+        var d=mm[1].trim();
+        if(d&&allDists.indexOf(d)<0) allDists.push(d);
+      }
+      if(allDists.length) district=allDists.join(', ');
+
+      out.push({
+        name:    name,
+        mw:      mw,
+        stage:   stage,
+        licno:   cv(4),
+        issue:   cv(5),
+        validity:cv(6),
+        promoter:cv(7),
+        address: cv(8),
+        lat1:    lat1,  lat2: lat2,
+        lon1:    lon1,  lon2: lon2,
+        clat:    clat,  clon: clon,
+        vdc:     vdcRaw,   // original VDC/District text from DoED
+        district:district,
+        province:province,
+        river:   cv(3)
+      });
+    });
+  });
+  return out;
+}
+
+/* ══ FETCH ENGINE ══
+   - Tries each proxy in sequence with individual timeouts
+   - On success, immediately calls onSuccess(projects) so map/table update progressively
+   - On total failure, calls onFail() — source shown as ✗ but others continue
+   - Per-source proxy index is offset to spread load (avoids all 9 hitting proxy[0] at once)
+*/
+var _proxyOffset=0;
+function fetchSrc(src, onSuccess, onFail){
+  var startProxy=(_proxyOffset++)%PROXIES.length;
+  var tried=0;
+  var maxTries=PROXIES.length;
+
+  function attempt(rawIdx){
+    if(tried>=maxTries){ onFail(); return; }
+    tried++;
+    var pi=rawIdx%PROXIES.length;
+    var proxy=PROXIES[pi];
+    var targetUrl=proxy.enc?encodeURIComponent(src.url):src.url;
+    var fullUrl=proxy.pfx+targetUrl;
+
+    var ab=typeof AbortController!=='undefined'?new AbortController():null;
+    var TIMEOUT=20000; // 20s per proxy attempt
+    var timer=setTimeout(function(){
+      if(ab) ab.abort();
+      attempt(rawIdx+1);
+    }, TIMEOUT);
+
+    fetch(fullUrl, ab?{signal:ab.signal}:{})
+      .then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.text();
+      })
+      .then(function(html){
+        clearTimeout(timer);
+        // allorigins wraps in JSON {contents:"..."}  — unwrap if needed
+        if(html.trim().charAt(0)==='{'){
+          try{
+            var j=JSON.parse(html);
+            if(j.contents) html=j.contents;
+          }catch(e){}
+        }
+        var ps=parseTable(html, src.stg);
+        if(!ps.length){
+          attempt(rawIdx+1); // got HTML but no table rows — try next proxy
+          return;
+        }
+        onSuccess(ps);
+      })
+      .catch(function(){
+        clearTimeout(timer);
+        attempt(rawIdx+1);
+      });
+  }
+  attempt(startProxy);
+}
+
+/* ══ STATE ══ */
+var ALL=[],FILT=[];
+var SON={survey:1,appsurvey:1,construction:1,appconstruction:1,operational:1};
+var PROV='all',MWMIN=0,MWMAX=Infinity;
+var SCOL='mw',SDIR='desc';
+var SEL=null;
+var STAT={};
+SRCS.forEach(function(s){STAT[s.id]='pend';});
+
+/* ══ MAP ══ */
+var map=L.map('map',{center:[28.2,84.1],zoom:7});
+var TILES={
+  osm:  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© <a href="https://openstreetmap.org">OSM</a>',maxZoom:19}),
+  topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'© OpenTopoMap',maxZoom:17}),
+  esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19}),
+  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© CARTO',maxZoom:19})
+};
+var curBase='osm';
+TILES.osm.addTo(map);
+
+document.querySelectorAll('.bb').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.bb').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    map.removeLayer(TILES[curBase]);
+    curBase=b.dataset.base;
+    TILES[curBase].addTo(map);
+  });
+});
+
+var mkLyr=L.layerGroup().addTo(map);
+var bdLyr=L.layerGroup().addTo(map);
+var showMk=true,showBd=true;
+document.getElementById('lmk').onchange=function(){showMk=this.checked; if(showMk)mkLyr.addTo(map);else map.removeLayer(mkLyr);};
+document.getElementById('lbd').onchange=function(){showBd=this.checked; if(showBd)bdLyr.addTo(map);else map.removeLayer(bdLyr);};
+
+/* ══ BOOT ══ */
+function boot(){
+  document.getElementById('ldr').classList.remove('gone');
+  document.getElementById('btn-ref').classList.add('sp');
+  document.getElementById('ldr-fill').style.width='0%';
+  ALL=[];
+  SRCS.forEach(function(s){STAT[s.id]='pend';});
+  renderSrcList(); renderLdr();
+  var done=0, n=SRCS.length;
+
+  function onSrcDone(){
+    done++;
+    document.getElementById('ldr-fill').style.width=Math.round(done/n*100)+'%';
+    renderLdr(); renderSrcList();
+    // Progressively update map/table as each source loads
+    updateKPIs(); applyFilters();
+    if(done===n) onAllDone();
+  }
+
+  SRCS.forEach(function(src, i){
+    STAT[src.id]='ld';
+    // Stagger starts slightly so proxies aren't overwhelmed simultaneously
+    setTimeout(function(){
+      renderLdr(); renderSrcList();
+      fetchSrc(
+        src,
+        function(ps){ // success
+          // Deduplicate against already-loaded data before adding
+          var existing={};
+          ALL.forEach(function(p){ existing[(p.name||'').trim().toLowerCase()+'|'+p.stage]=1; });
+          ps.forEach(function(p){
+            var k=(p.name||'').trim().toLowerCase()+'|'+p.stage;
+            if(!existing[k]){ ALL.push(p); existing[k]=1; }
+          });
+          STAT[src.id]='ok';
+          onSrcDone();
+        },
+        function(){ // fail
+          STAT[src.id]='fail';
+          onSrcDone();
+        }
+      );
+    }, i*200); // 200ms stagger between source starts
+  });
+}
+
+function onAllDone(){
+  var now=new Date();
+  document.getElementById('ts').textContent=
+    now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+
+    ' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  setTimeout(function(){
+    document.getElementById('ldr').classList.add('gone');
+    document.getElementById('btn-ref').classList.remove('sp');
+  }, 800);
+}
+
+function renderLdr(){
+  var el=document.getElementById('ldr-items'); el.innerHTML='';
+  SRCS.forEach(function(s){
+    var st=STAT[s.id]||'pend';
+    var cls=st==='ok'?'ok':st==='ld'?'ld':st==='fail'?'fail':'pend';
+    var lbl=(st==='ok'?'✓ ':st==='ld'?'… ':st==='fail'?'✗ ':'· ')+s.label;
+    el.innerHTML+='<div class="ldi '+cls+'"><div class="d"></div><span>'+esc(lbl)+'</span></div>';
+  });
+}
+
+function renderSrcList(){
+  var el=document.getElementById('srcl'); el.innerHTML='';
+  SRCS.forEach(function(s){
+    var st=STAT[s.id]||'pend';
+    var col=st==='ok'?'var(--co)':st==='ld'?'var(--acc)':st==='fail'?'#f85149':'var(--b1)';
+    var lbl=st==='ok'?'✓':st==='ld'?'…':st==='fail'?'✗':'·';
+    var retry=st==='fail'?'<button onclick="retrySrc(\''+s.id+'\')" style="margin-left:4px;background:rgba(248,81,73,.15);border:1px solid #f85149;color:#f85149;border-radius:3px;padding:1px 5px;font-size:.58rem;cursor:pointer;font-family:var(--fd)">retry</button>':'';
+    el.innerHTML+='<div class="sri"><div class="sdot2" style="background:'+col+'"></div>'+
+      '<a href="'+s.url+'" target="_blank">'+esc(s.label)+'</a>'+
+      '<span class="sst" style="color:'+col+'">'+lbl+'</span>'+retry+'</div>';
+  });
+}
+
+function retrySrc(id){
+  var src=SRCS.find(function(s){return s.id===id;});
+  if(!src) return;
+  STAT[id]='ld'; renderSrcList(); renderLdr();
+  fetchSrc(
+    src,
+    function(ps){
+      var existing={};
+      ALL.forEach(function(p){ existing[(p.name||'').trim().toLowerCase()+'|'+p.stage]=1; });
+      ps.forEach(function(p){
+        var k=(p.name||'').trim().toLowerCase()+'|'+p.stage;
+        if(!existing[k]){ ALL.push(p); existing[k]=1; }
+      });
+      STAT[id]='ok';
+      renderSrcList(); renderLdr(); updateKPIs(); applyFilters();
+    },
+    function(){
+      STAT[id]='fail'; renderSrcList(); renderLdr();
+    }
+  );
+}
+
+
+/* ══ KPIs ══ */
+function updateKPIs(){
+  var c={survey:0,appsurvey:0,construction:0,appconstruction:0,operational:0};
+  ALL.forEach(function(p){if(c[p.stage]!==undefined)c[p.stage]++;});
+  document.getElementById('kv-s').textContent=c.survey;
+  document.getElementById('kv-as').textContent=c.appsurvey;
+  document.getElementById('kv-c').textContent=c.construction;
+  document.getElementById('kv-ac').textContent=c.appconstruction;
+  document.getElementById('kv-o').textContent=c.operational;
+  document.getElementById('kv-t').textContent=ALL.length;
+  document.getElementById('cn-s').textContent=c.survey;
+  document.getElementById('cn-as').textContent=c.appsurvey;
+  document.getElementById('cn-c').textContent=c.construction;
+  document.getElementById('cn-ac').textContent=c.appconstruction;
+  document.getElementById('cn-o').textContent=c.operational;
+}
+
+/* ══ EVENTS ══ */
+var evB=false;
+function bindEvs(){
+  if(evB)return; evB=true;
+  document.getElementById('fq').addEventListener('input',deb(applyFilters,180));
+  document.getElementById('fmin').addEventListener('input',function(){MWMIN=+this.value||0;setMWQ(null);applyFilters();});
+  document.getElementById('fmax').addEventListener('input',function(){MWMAX=+this.value||Infinity;setMWQ(null);applyFilters();});
+  document.querySelectorAll('.sg').forEach(function(b){
+    b.addEventListener('click',function(){
+      var s=b.dataset.s; SON[s]=SON[s]?0:1; b.classList.toggle('on',!!SON[s]); applyFilters();
+    });
+  });
+  document.querySelectorAll('.pv').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.pv').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); PROV=b.dataset.pv; applyFilters();
+    });
+  });
+  document.querySelectorAll('.mwq').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.mwq').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      var v=b.dataset.mw;
+      if(v==='all'){MWMIN=0;MWMAX=Infinity;document.getElementById('fmin').value='';document.getElementById('fmax').value='';}
+      else{var p=v.split(',');MWMIN=+p[0];MWMAX=+p[1];document.getElementById('fmin').value=p[0];document.getElementById('fmax').value=p[1];}
+      applyFilters();
+    });
+  });
+  document.querySelectorAll('table.dt th[data-col]').forEach(function(th){
+    th.addEventListener('click',function(){
+      var c=th.dataset.col;
+      if(SCOL===c)SDIR=SDIR==='asc'?'desc':'asc';else{SCOL=c;SDIR='asc';}
+      renderTable(); updSort();
+    });
+  });
+  initResize();
+}
+function setMWQ(v){document.querySelectorAll('.mwq').forEach(function(b){b.classList.toggle('on',b.dataset.mw===v);});}
+
+/* ══ FILTER ══ */
+function applyFilters(){
+  var q=(document.getElementById('fq').value||'').toLowerCase().trim();
+  FILT=ALL.filter(function(p){
+    if(!SON[p.stage]) return false;
+    if(PROV!=='all'&&p.province!==PROV) return false;
+    if(p.mw<MWMIN||p.mw>MWMAX) return false;
+    if(q){
+      if((p.name||'').toLowerCase().indexOf(q)<0&&
+         (p.district||'').toLowerCase().indexOf(q)<0&&
+         (p.vdc||'').toLowerCase().indexOf(q)<0&&
+         (p.river||'').toLowerCase().indexOf(q)<0) return false;
+    }
+    return true;
+  });
+  var tmw=FILT.reduce(function(a,p){return a+p.mw;},0);
+  document.getElementById('t-sn').textContent=FILT.length.toLocaleString();
+  document.getElementById('t-to').textContent=ALL.length.toLocaleString();
+  document.getElementById('t-mw').textContent=Math.round(tmw).toLocaleString()+' MW';
+  renderTable(); renderMap(); renderCharts();
+}
+
+function resetAll(){
+  document.getElementById('fq').value='';
+  document.getElementById('fmin').value=''; document.getElementById('fmax').value='';
+  MWMIN=0; MWMAX=Infinity;
+  Object.keys(SON).forEach(function(k){SON[k]=1;});
+  document.querySelectorAll('.sg').forEach(function(b){b.classList.add('on');});
+  PROV='all';
+  document.querySelectorAll('.pv').forEach(function(b){b.classList.toggle('on',b.dataset.pv==='all');});
+  document.querySelectorAll('.mwq').forEach(function(b){b.classList.toggle('on',b.dataset.mw==='all');});
+  applyFilters();
+}
+
+/* ══ RENDER MAP ══ */
+// Keep a reference map: project key → marker
+var markerMap={};
+
+function renderMap(){
+  mkLyr.clearLayers(); bdLyr.clearLayers(); markerMap={};
+
+  FILT.forEach(function(p){
+    var cfg=SCFG[p.stage]; if(!cfg) return;
+    var hasCtr=!isNaN(p.clat)&&!isNaN(p.clon);
+    var hasBnd=!isNaN(p.lat1)&&!isNaN(p.lat2)&&!isNaN(p.lon1)&&!isNaN(p.lon2);
+    var isSel=SEL&&SEL.name===p.name&&SEL.stage===p.stage;
+
+    // Boundary rectangle
+    if(hasBnd&&showBd){
+      var sLat=Math.min(p.lat1,p.lat2),nLat=Math.max(p.lat1,p.lat2);
+      var wLon=Math.min(p.lon1,p.lon2),eLon=Math.max(p.lon1,p.lon2);
+      if(nLat-sLat<5&&eLon-wLon<5&&nLat>sLat&&eLon>wLon){
+        var rect=L.rectangle([[sLat,wLon],[nLat,eLon]],{
+          color:cfg.color,weight:1.2,opacity:.55,
+          fillColor:cfg.color,fillOpacity:.06,dashArray:'5,4'
+        });
+        rect.on('click',function(e){L.DomEvent.stopPropagation(e);selectProj(p);});
+        rect.bindTooltip('<b>'+esc(p.name)+'</b><br/>'+cfg.label+(p.mw?' · '+p.mw.toFixed(2)+' MW':''),{sticky:true,direction:'top'});
+        bdLyr.addLayer(rect);
+      }
+    }
+
+    // Centre marker
+    if(hasCtr&&showMk){
+      var mk=L.circleMarker([p.clat,p.clon],{
+        radius:isSel?10:7,
+        color:isSel?'#ffffff':cfg.color,
+        weight:isSel?2.5:1.5,
+        fillColor:cfg.color,
+        fillOpacity:isSel?0.98:0.78,
+        opacity:1,
+        zIndexOffset:isSel?1000:0
+      });
+
+      var popup='<div style="min-width:195px">'+
+        '<b style="font-size:.85rem">'+esc(p.name)+'</b><br/>'+
+        '<span style="color:'+cfg.color+';font-size:.6rem;font-family:monospace;font-weight:700">'+cfg.label+'</span>'+
+        '<div style="margin-top:6px;font-size:.72rem;line-height:1.85;color:#8b949e">'+
+        (p.mw?'<b style="color:#e6edf3">'+p.mw.toFixed(2)+' MW</b><br/>':'')+
+        (p.district&&p.district!=='—'?'📍 '+esc(p.district)+(p.province&&p.province!=='—'?' · '+p.province:'')+'<br/>':'')+
+        (p.river?'🌊 '+esc(p.river)+'<br/>':'')+
+        (p.promoter?'🏢 '+esc(p.promoter.slice(0,48))+'<br/>':'')+
+        (!isNaN(p.clat)?'🌐 '+p.clat.toFixed(4)+'°N, '+p.clon.toFixed(4)+'°E':'')+
+        '</div></div>';
+      mk.bindPopup(popup,{maxWidth:300});
+      mk.on('click',function(e){L.DomEvent.stopPropagation(e);selectProj(p);});
+
+      var key=p.name+'|'+p.stage;
+      markerMap[key]=mk;
+      mkLyr.addLayer(mk);
+    }
+  });
+}
+
+/* ══ SELECT PROJECT ══ */
+function selectProj(p){
+  SEL=p;
+  var key=p.name+'|'+p.stage;
+  // Re-render to show selected marker highlighted
+  renderMap();
+  // Pan to centre
+  if(!isNaN(p.clat)&&!isNaN(p.clon)){
+    map.setView([p.clat,p.clon],12,{animate:true});
+    // Open popup on the marker
+    var mk2=markerMap[key];
+    if(mk2) setTimeout(function(){mk2.openPopup();},400);
+  }
+  // Highlight table row
+  document.querySelectorAll('#tbody tr').forEach(function(r){r.classList.remove('sel');});
+  document.querySelectorAll('#tbody tr').forEach(function(r){
+    if(r.dataset.key===key){r.classList.add('sel');r.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  });
+  // Detail
+  renderDetail(p);
+  // Status bar
+  var cfg=SCFG[p.stage]||{};
+  document.getElementById('map-sb').textContent=
+    p.name+(cfg.label?' · '+cfg.label:'')+(p.mw?' · '+p.mw.toFixed(2)+' MW':'');
+}
+
+/* ══ DETAIL PANEL ══ */
+function renderDetail(p){
+  var cfg=SCFG[p.stage]||{label:p.stage,color:'#888'};
+
+  function row(label,val,cls){
+    return '<tr><th>'+esc(label)+'</th><td'+(cls?' class="'+cls+'"':'')+'>'+esc(String(val||'—'))+'</td></tr>';
+  }
+  function rowHTML(label,html){
+    return '<tr><th>'+esc(label)+'</th><td>'+html+'</td></tr>';
+  }
+
+  var html=
+    '<div class="det-head">'+
+      '<div class="det-name">'+esc(p.name)+'</div>'+
+      '<span class="det-tag" style="background:rgba(255,255,255,.07);color:'+cfg.color+'">'+cfg.label+'</span>'+
+    '</div>'+
+    '<div class="det-sect">Project Details</div>'+
+    '<table class="det-table">'+
+      row('Capacity (MW)', p.mw?p.mw.toFixed(3)+' MW':'—', 'big')+
+      row('Stage',         cfg.label)+
+      row('River',         p.river)+
+      row('District',      p.district||'—')+
+      row('Province',      p.province||'—')+
+      row('Promoter',      p.promoter)+
+      row('Lic / App No',  p.licno)+
+      row('Issue Date',    p.issue)+
+      row('Validity',      p.validity)+
+      row('Address',       p.address)+
+    '</table>';
+
+  // VDC/District as DoED
+  if(p.vdc&&p.vdc.trim()){
+    html+=
+      '<div class="det-sect">VDC / District (DoED)</div>'+
+      '<table class="det-table">'+
+        '<tr><td style="white-space:normal;line-height:1.6">'+esc(p.vdc)+'</td></tr>'+
+      '</table>';
+  }
+
+  // Boundary coordinates
+  var hasBnd=!isNaN(p.lat1)&&!isNaN(p.lon1);
+  if(hasBnd){
+    html+=
+      '<div class="det-sect">Coordinates — Decimal Degrees</div>'+
+      '<table class="det-table">'+
+        row('Lat N (start)', isNaN(p.lat1)?'—':p.lat1.toFixed(5)+'°')+
+        row('Lat N (end)',   isNaN(p.lat2)?'—':p.lat2.toFixed(5)+'°')+
+        row('Lon E (start)', isNaN(p.lon1)?'—':p.lon1.toFixed(5)+'°')+
+        row('Lon E (end)',   isNaN(p.lon2)?'—':p.lon2.toFixed(5)+'°')+
+        row('Centre Lat',    isNaN(p.clat)?'—':p.clat.toFixed(5)+'°')+
+        row('Centre Lon',    isNaN(p.clon)?'—':p.clon.toFixed(5)+'°')+
+      '</table>';
+  }
+
+  // Google Maps link
+  if(!isNaN(p.clat)&&!isNaN(p.clon)){
+    html+='<a class="det-gmaps" href="https://maps.google.com/?q='+p.clat.toFixed(5)+','+p.clon.toFixed(5)+'" target="_blank">⊕ Open centre in Google Maps ↗</a>';
+  }
+
+  document.getElementById('det').innerHTML=html;
+}
+
+
+/* ══ RENDER TABLE ══ */
+function renderTable(){
+  var data=FILT.slice().sort(function(a,b){
+    var av,bv;
+    if(SCOL==='mw'){av=a.mw;bv=b.mw;}
+    else if(SCOL==='lat1'){av=a.lat1;bv=b.lat1;}
+    else if(SCOL==='lat2'){av=a.lat2;bv=b.lat2;}
+    else if(SCOL==='lon1'){av=a.lon1;bv=b.lon1;}
+    else if(SCOL==='lon2'){av=a.lon2;bv=b.lon2;}
+    else{av=String(a[SCOL]||'').toLowerCase();bv=String(b[SCOL]||'').toLowerCase();}
+    if(av<bv)return SDIR==='asc'?-1:1;
+    if(av>bv)return SDIR==='asc'?1:-1;
+    return 0;
+  });
+
+  var tb=document.getElementById('tbody'); tb.innerHTML='';
+  data.forEach(function(p){
+    var cfg=SCFG[p.stage]||{label:p.stage,tcls:'tg-s'};
+    var key=p.name+'|'+p.stage;
+    var isSel=SEL&&SEL.name===p.name&&SEL.stage===p.stage;
+    var tr=document.createElement('tr');
+    if(isSel) tr.classList.add('sel');
+    tr.dataset.key=key;
+
+    // Build lat/lon decimal strings
+    var lat1s=isNaN(p.lat1)?'—':p.lat1.toFixed(5);
+    var lat2s=isNaN(p.lat2)?'—':p.lat2.toFixed(5);
+    var lon1s=isNaN(p.lon1)?'—':p.lon1.toFixed(5);
+    var lon2s=isNaN(p.lon2)?'—':p.lon2.toFixed(5);
+
+    tr.innerHTML=
+      // Project name cell — click triggers selectProj
+      '<td class="nm" title="'+esc(p.name)+'">'+esc(p.name)+'</td>'+
+      '<td class="mwcol">'+( p.mw?p.mw.toFixed(2):'—' )+'</td>'+
+      '<td><span class="tag '+cfg.tcls+'">'+cfg.label+'</span></td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.licno||'—')+'</td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.issue||'—')+'</td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.validity||'—')+'</td>'+
+      '<td>'+esc(p.river||'—')+'</td>'+
+      '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis" title="'+esc(p.promoter||'')+'">'+esc(p.promoter||'—')+'</td>'+
+      '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-size:.67rem" title="'+esc(p.address||'')+'">'+esc(p.address||'—')+'</td>'+
+      '<td class="coord">'+lat1s+'</td>'+
+      '<td class="coord">'+lat2s+'</td>'+
+      '<td class="coord">'+lon1s+'</td>'+
+      '<td class="coord">'+lon2s+'</td>'+
+      '<td class="vdc" title="'+esc(p.vdc||'')+'">'+esc(p.vdc||'—')+'</td>'+
+      '<td>'+esc(p.province||'—')+'</td>';
+
+    // Click on ANY cell triggers select + map focus
+    tr.addEventListener('click',function(){selectProj(p);});
+    tb.appendChild(tr);
+  });
+}
+
+function updSort(){
+  document.querySelectorAll('table.dt th').forEach(function(th){
+    th.className='thn';
+    if(th.dataset.col===SCOL) th.className=SDIR==='asc'?'tha':'thd';
+  });
+}
+
+/* ══ CHARTS ══ */
+function renderCharts(){
+  var sc={survey:0,appsurvey:0,construction:0,appconstruction:0,operational:0};
+  var mwc={survey:0,appsurvey:0,construction:0,appconstruction:0,operational:0};
+  FILT.forEach(function(p){if(sc[p.stage]!==undefined){sc[p.stage]++;mwc[p.stage]+=p.mw;}});
+  var maxSc=Math.max.apply(null,Object.values(sc).concat([1]));
+  var maxMw=Math.max.apply(null,Object.values(mwc).concat([1]));
+  document.getElementById('ch-s').innerHTML=Object.keys(SCFG).map(function(k){
+    var c=SCFG[k]; return cbar(c.label.replace(' License',''),sc[k]/maxSc,c.color,sc[k]);
+  }).join('');
+  document.getElementById('ch-mw').innerHTML=Object.keys(SCFG).map(function(k){
+    var c=SCFG[k]; return cbar(c.label.replace(' License',''),mwc[k]/maxMw,c.color,Math.round(mwc[k]).toLocaleString());
+  }).join('');
+  var dm={};
+  FILT.forEach(function(p){
+    var d=p.district&&p.district!=='—'?p.district.split(',')[0].trim():'Unknown';
+    dm[d]=(dm[d]||0)+1;
+  });
+  var dtop=Object.entries(dm).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var dmax=dtop.length?dtop[0][1]:1;
+  var pal=['#58a6ff','#79c0ff','#388bfd','#1f6feb','#a5d6ff','#cae8ff','#39d353','#f0883e'];
+  document.getElementById('ch-d').innerHTML=dtop.map(function(e,i){
+    return cbar(e[0].length>12?e[0].slice(0,11)+'…':e[0],e[1]/dmax,pal[i%pal.length],e[1]);
+  }).join('')||'<div style="font-size:.65rem;color:var(--t3)">No data</div>';
+}
+
+function cbar(lbl,frac,col,v){
+  return '<div class="cbar">'+
+    '<div class="cbl" title="'+esc(lbl)+'">'+esc(lbl)+'</div>'+
+    '<div class="cbt"><div class="cbf" style="width:'+(Math.min(1,frac)*100)+'%;background:'+col+'"></div></div>'+
+    '<div class="cbv">'+esc(String(v))+'</div></div>';
+}
+
+/* ══ CSV ══ */
+function exportCSV(){
+  var hdr=['Project','MW','Stage','Province','District','VDC/District','River','Promoter','Lic/App No','Issue Date','Validity','Lat N Start','Lat N End','Lon E Start','Lon E End','Centre Lat','Centre Lon'];
+  var rows=[hdr.join(',')];
+  FILT.forEach(function(p){
+    rows.push([
+      p.name,p.mw,SCFG[p.stage]?SCFG[p.stage].label:'',
+      p.province,p.district,p.vdc,p.river,p.promoter,p.licno,p.issue,p.validity,
+      fDec(p.lat1),fDec(p.lat2),fDec(p.lon1),fDec(p.lon2),fDec(p.clat),fDec(p.clon)
+    ].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(','));
+  });
+  var bl=new Blob([rows.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(bl);
+  a.download='nepal-hydro-doed-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+/* ══ RESIZE ══ */
+function initResize(){
+  dragH(document.getElementById('vh-l'),function(dx){
+    var el=document.getElementById('lp');
+    el.style.width=clamp(el.offsetWidth+dx,155,480)+'px';
+    map.invalidateSize();
+  });
+  dragH(document.getElementById('vh-r'),function(dx){
+    var el=document.getElementById('rp');
+    el.style.width=clamp(el.offsetWidth-dx,155,480)+'px';
+    map.invalidateSize();
+  });
+  dragV(document.getElementById('hh'),function(dy){
+    var el=document.getElementById('tp');
+    el.style.height=clamp(el.offsetHeight-dy,60,window.innerHeight-200)+'px';
+    map.invalidateSize();
+  });
+}
+function dragH(el,fn){
+  var on=false,lx=0;
+  el.addEventListener('mousedown',function(e){on=true;lx=e.clientX;el.classList.add('on');document.body.style.cssText='cursor:col-resize;user-select:none';e.preventDefault();});
+  document.addEventListener('mousemove',function(e){if(!on)return;fn(e.clientX-lx);lx=e.clientX;});
+  document.addEventListener('mouseup',function(){if(on){on=false;el.classList.remove('on');document.body.style.cssText='';}});
+}
+function dragV(el,fn){
+  var on=false,ly=0;
+  el.addEventListener('mousedown',function(e){on=true;ly=e.clientY;el.classList.add('on');document.body.style.cssText='cursor:row-resize;user-select:none';e.preventDefault();});
+  document.addEventListener('mousemove',function(e){if(!on)return;fn(e.clientY-ly);ly=e.clientY;});
+  document.addEventListener('mouseup',function(){if(on){on=false;el.classList.remove('on');document.body.style.cssText='';}});
+}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+/* ══ UTILS ══ */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function deb(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
+
+/* ══ GO ══ */
+bindEvs(); // bind events immediately on page load
+boot();
+
+})();
+</script>
+</body>
+</html>
