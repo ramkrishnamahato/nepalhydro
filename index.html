@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
 <title>Nepal Hydro | Hydropower Data & Resources</title>
 <meta name="robots" content="index, follow">
 <meta name="description" content="Nepal hydropower data, resources and reference materials curated by Ramkrishna Mahato, Civil Engineer specializing in hydropower and infrastructure development.">
@@ -15,6 +16,13 @@
 <meta property="og:url" content="https://www.ramkrishnamahato.com.np/nepalhydro/">
 <meta property="og:type" content="website">
 
+<!-- Prevent Flash of Incorrect Theme -->
+<script>
+  (function(){
+    if (localStorage.getItem('theme') === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+  })();
+</script>
+
 <!-- Fonts & External CSS/JS -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -22,34 +30,32 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root{
-  --bg:#0d1117;--p1:#161b22;--p2:#1c2128;
-  --b1:#30363d;--b2:#21262d;
-  --t1:#e6edf3;--t2:#8b949e;--t3:#6e7681;
-  --acc:#58a6ff;--acc2:#1f6feb;
-  --cs:#f0883e;--cas:#e3b341;--cc:#a78bfa;--cac:#c084fc;--co:#4ade80;
-  --r:5px;--fh:'Syne',sans-serif;--fd:'JetBrains Mono',monospace;--f:'Inter',sans-serif;
+:root {
+  /* Dark Mode (Default) */
+  --bg: #0d1117; --p1: #161b22; --p2: #1c2128;
+  --b1: #30363d; --b2: #21262d;
+  --t1: #e6edf3; --t2: #8b949e; --t3: #6e7681;
+  --acc: #58a6ff; --acc2: #1f6feb;
+  --cs: #f0883e; --cas: #e3b341; --cc: #a78bfa; --cac: #c084fc; --co: #4ade80;
+  --r: 5px; --fh: 'Syne', sans-serif; --fd: 'JetBrains Mono', monospace; --f: 'Inter', sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);color:var(--t1);font-size:13px}
 
-/* ── LOADER ── */
-#ldr{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .5s}
-#ldr.gone{opacity:0;pointer-events:none}
-.ldr-logo{font-family:var(--fh);font-size:2rem;font-weight:800;letter-spacing:-.03em}
-.ldr-logo em{color:var(--acc);font-style:normal}
-.ldr-bar{width:300px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden}
-.ldr-fill{height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));width:0%;transition:width .3s}
-.ldr-items{display:flex;flex-direction:column;gap:4px;width:300px}
-.ldi{display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--t3);font-family:var(--fd)}
-.ldi .d{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--b1);transition:background .3s}
-.ldi.ld .d{background:var(--acc);animation:bk 1s infinite}
-.ldi.ok .d{background:var(--co)}.ldi.ok{color:var(--co)}
-.ldi.fail .d{background:#f85149}.ldi.fail{color:#f85149}
-@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+[data-theme="light"] {
+  /* Light Mode */
+  --bg: #f6f8fa; --p1: #ffffff; --p2: #f3f4f6;
+  --b1: #d0d7de; --b2: #e1e4e8;
+  --t1: #24292f; --t2: #57606a; --t3: #6e7781;
+  --acc: #0969da; --acc2: #0349b4;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);color:var(--t1);font-size:13px; transition: background 0.2s, color 0.2s;}
+
+/* TOP PROGRESS BAR */
+#top-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--acc2), var(--acc)); width: 0%; z-index: 9999; transition: width 0.3s ease, opacity 0.3s ease; opacity: 0; pointer-events: none; }
 
 /* ── TOP BAR ── */
-#bar{height:42px;display:flex;align-items:center;padding:0 14px;background:var(--p1);border-bottom:1px solid var(--b1);gap:10px;flex-shrink:0}
+#bar{height:42px;display:flex;align-items:center;padding:0 14px;background:var(--p1);border-bottom:1px solid var(--b1);gap:10px;flex-shrink:0; transition: background 0.2s, border-color 0.2s;}
 .bar-logo{font-family:var(--fh);font-weight:800;font-size:.95rem;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .bar-logo em{color:var(--acc);font-style:normal}
 .bar-src{font-size:.58rem;color:var(--t3);font-family:var(--fd);border-left:1px solid var(--b2);padding-left:10px;white-space:nowrap}
@@ -61,17 +67,23 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .kpi.kc .v{color:var(--cc)}.kpi.kac .v{color:var(--cac)}
 .kpi.ko .v{color:var(--co)}.kpi.kt .v{color:var(--acc)}
 .bar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.live{display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--co);font-family:var(--fd)}
-.live-dot{width:5px;height:5px;border-radius:50%;background:var(--co);animation:bk 2s infinite}
+
+/* Sync status indicators */
+.live{display:flex;align-items:center;gap:5px;font-size:.62rem;font-family:var(--fd); margin-right: 4px; font-weight:600;}
+.live-dot{width:6px;height:6px;border-radius:50%;}
+.spinner { width: 10px; height: 10px; border: 2px solid var(--t3); border-top-color: var(--co); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.3}}
+
 #ts{font-size:.6rem;color:var(--t3);font-family:var(--fd);white-space:nowrap}
-.btn{background:var(--p2);border:1px solid var(--b1);color:var(--t2);border-radius:var(--r);padding:4px 10px;font-size:.7rem;font-family:var(--f);cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;text-decoration:none}
+.btn{background:var(--p2);border:1px solid var(--b1);color:var(--t2);border-radius:var(--r);padding:4px 10px;font-size:.7rem;font-family:var(--f);cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;text-decoration:none; font-weight:500;}
 .btn:hover{background:var(--b1);color:var(--t1)}
 .btn.sp .ri{display:inline-block;animation:rot .5s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 
 /* ── LAYOUT ── */
 #shell{display:flex;height:calc(100vh - 42px);overflow:hidden}
-.panel{background:var(--p1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.panel{background:var(--p1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0; transition: background 0.2s;}
 #lp{width:265px;min-width:155px;max-width:480px;border-right:1px solid var(--b1)}
 #rp{width:320px;min-width:200px;max-width:480px;border-left:1px solid var(--b1)}
 #cp{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:200px}
@@ -88,7 +100,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .psc::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
 
 /* SECTIONS */
-.sec{padding:10px 12px;border-bottom:1px solid var(--b2)}
+.sec{padding:10px 12px;border-bottom:1px solid var(--b2); transition: border-color 0.2s;}
 .sh{font-family:var(--fh);font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
 .sh a{color:var(--acc);font-size:.57rem;font-weight:400;text-decoration:none}
 .sh a:hover{text-decoration:underline}
@@ -113,26 +125,16 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .scnt{margin-left:auto;font-family:var(--fd);font-size:.62rem;color:var(--t3)}
 
-/* PROVINCE */
-.pvs{display:flex;flex-wrap:wrap;gap:3px}
-.pv{padding:2px 8px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
-.pv:hover{border-color:var(--t3);color:var(--t1)}
-.pv.on{background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
-
-/* MW */
-.mwqs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px}
-.mwq{padding:2px 7px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
-.mwq:hover,.mwq.on{background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
+/* PROVINCE & MW */
+.pvs, .mwqs, .bbs {display:flex;flex-wrap:wrap;gap:3px}
+.pv, .mwq, .bb {padding:2px 8px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
+.pv:hover, .mwq:hover, .bb:hover {border-color:var(--t3);color:var(--t1)}
+.pv.on, .mwq.on, .bb.on {background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
+.mwqs{margin-bottom:7px}
 .rr{display:flex;gap:5px;align-items:center}
 .rr input{flex:1;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);padding:5px 7px;color:var(--t1);font-family:var(--fd);font-size:.7rem;outline:none;min-width:0;-moz-appearance:textfield}
 .rr input:focus{border-color:var(--acc)}
 .rsep{color:var(--t3);font-size:.7rem}
-
-/* MAP BASE */
-.bbs{display:flex;flex-wrap:wrap;gap:3px}
-.bb{padding:2px 8px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
-.bb:hover{color:var(--t1);border-color:var(--t3)}
-.bb.on{background:rgba(88,166,255,.12);border-color:var(--acc);color:var(--acc)}
 
 /* LAYERS */
 .lyrs{display:flex;flex-direction:column;gap:4px}
@@ -146,27 +148,28 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .sri a{color:var(--acc);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem}
 .sri a:hover{text-decoration:underline}
 .sdot2{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s}
-.sst{font-size:.6rem;flex-shrink:0}
+.sst{font-size:.6rem;flex-shrink:0; font-weight:600;}
 
 /* ACTIONS */
 .ar{display:flex;gap:5px}
-.ab{flex:1;padding:6px 8px;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);color:var(--t2);font-family:var(--f);font-size:.71rem;cursor:pointer;transition:all .15s;text-align:center}
+.ab{flex:1;padding:6px 8px;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);color:var(--t2);font-family:var(--f);font-size:.71rem;cursor:pointer;transition:all .15s;text-align:center; font-weight:500;}
 .ab:hover{background:var(--b1);color:var(--t1)}
 .ab.pr{background:var(--acc2);border-color:var(--acc);color:#fff}
 .ab.pr:hover{background:var(--acc)}
 
 /* MAP */
 #mapbox{flex:1;min-height:80px;position:relative;overflow:hidden}
-#map{width:100%;height:100%;background:#0d1117}
-.mov{position:absolute;z-index:900;background:rgba(13,17,23,.9);border:1px solid var(--b1);border-radius:var(--r);backdrop-filter:blur(6px)}
-#map-leg{bottom:30px;left:10px;padding:8px 11px}
-.lr{display:flex;align-items:center;gap:6px;font-size:.65rem;color:var(--t2);margin-bottom:3px}
+#map{width:100%;height:100%;background:var(--bg)}
+.mov{position:absolute;z-index:900;background:var(--p1);border:1px solid var(--b1);border-radius:var(--r);backdrop-filter:blur(6px); opacity: 0.95; box-shadow: 0 4px 15px rgba(0,0,0,0.15);}
+#map-leg{bottom:25px;left:10px;padding:10px 14px}
+.lr{display:flex;align-items:center;gap:8px;font-size:.68rem;color:var(--t2);margin-bottom:5px; font-family:var(--f);}
 .lr:last-child{margin:0}
 .ld2{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-#map-sb{top:10px;left:50%;transform:translateX(-50%);padding:4px 12px;font-size:.66rem;color:var(--t2);font-family:var(--fd);white-space:nowrap;pointer-events:none;max-width:70%;overflow:hidden;text-overflow:ellipsis}
+#map-sb{top:10px;left:50%;transform:translateX(-50%);padding:6px 14px;font-size:.66rem;color:var(--t2);font-family:var(--fd);white-space:nowrap;pointer-events:none;max-width:70%;overflow:hidden;text-overflow:ellipsis}
+.leaflet-interactive { transition: stroke-width 0.2s, stroke-opacity 0.2s, fill-opacity 0.2s; }
 
 /* TABLE PANEL */
-#tp{min-height:60px;background:var(--p1);display:flex;flex-direction:column;border-top:1px solid var(--b1)}
+#tp{min-height:60px;background:var(--p1);display:flex;flex-direction:column;border-top:1px solid var(--b1); transition: background 0.2s;}
 .tbar{display:flex;align-items:center;padding:5px 12px;border-bottom:1px solid var(--b1);gap:8px;flex-shrink:0;height:33px}
 .ti{font-family:var(--fd);font-size:.68rem;color:var(--t3)}
 .ti strong{color:var(--t1)}.ti .mwv{color:var(--acc)}
@@ -176,7 +179,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .tsc::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
 
 table.dt{width:100%;border-collapse:collapse;font-size:.7rem;table-layout:fixed}
-table.dt th{position:sticky;top:0;z-index:2;background:var(--p2);color:var(--t3);padding:5px 8px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1);font-family:var(--fd);font-size:.59rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;transition:color .15s;overflow:hidden;text-overflow:ellipsis}
+table.dt th{position:sticky;top:0;z-index:2;background:var(--p2);color:var(--t3);padding:5px 8px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1);font-family:var(--fd);font-size:.59rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;transition:color .15s, background 0.2s;overflow:hidden;text-overflow:ellipsis}
 table.dt th:hover{color:var(--t1)}
 table.dt th:nth-child(1){width:220px}   
 table.dt th:nth-child(2){width:64px}    
@@ -233,32 +236,25 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 .chart-wrapper{position:relative; width:100%; height:200px; display:flex; justify-content:center; align-items:center;}
 .chart-wrapper.pie-wrap{height: 220px;}
 
-/* LEAFLET */
-.leaflet-container{background:#0d1117!important}
+/* LEAFLET OVERRIDES */
+.leaflet-container{background:var(--bg)!important; font-family:var(--f)!important;}
 .leaflet-control-zoom a{background:var(--p2)!important;color:var(--t1)!important;border-color:var(--b1)!important}
 .leaflet-control-zoom a:hover{background:var(--b1)!important}
-.leaflet-control-attribution{background:rgba(13,17,23,.8)!important;color:var(--t3)!important;font-size:.5rem!important}
+.leaflet-control-attribution{background:var(--p1)!important;color:var(--t3)!important;font-size:.5rem!important; border-top: 1px solid var(--b1)!important;}
 .leaflet-control-attribution a{color:var(--acc)!important}
-.leaflet-popup-content-wrapper{background:var(--p1)!important;border:1px solid var(--b1)!important;border-radius:var(--r)!important;box-shadow:0 8px 32px rgba(0,0,0,.7)!important}
+.leaflet-popup-content-wrapper{background:var(--p1)!important;border:1px solid var(--b1)!important;border-radius:var(--r)!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important}
 .leaflet-popup-tip{background:var(--p1)!important}
-.leaflet-popup-content{margin:10px 13px!important;font-family:var(--f)!important;color:var(--t1)!important;font-size:.77rem!important}
+.leaflet-popup-content{margin:10px 13px!important;color:var(--t1)!important;font-size:.77rem!important}
 .leaflet-popup-close-button{color:var(--t3)!important;right:6px!important;top:5px!important}
 </style>
-
 </head>
 <body>
 
-<div id="ldr">
-  <div class="ldr-logo">Nepal<em>Hydro</em></div>
-  <div class="ldr-bar"><div class="ldr-fill" id="ldr-fill"></div></div>
-  <div class="ldr-items" id="ldr-items">
-    <div class="ldi ld"><div class="d"></div><span>Connecting to doed.gov.np…</span></div>
-  </div>
-</div>
+<div id="top-progress"></div>
 
 <div id="bar">
   <div class="bar-logo">🇳🇵 Nepal<em>Hydro</em></div>
-  <div class="bar-src">LIVE · DOED.GOV.NP</div>
+  <div class="bar-src">DOED.GOV.NP</div>
   <div class="kpis">
     <div class="kpi ks"><div class="v" id="kv-s">—</div><div class="l">Survey</div></div>
     <div class="kpi kas"><div class="v" id="kv-as">—</div><div class="l">App.Survey</div></div>
@@ -268,9 +264,10 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
     <div class="kpi kt"><div class="v" id="kv-t">—</div><div class="l">Total</div></div>
   </div>
   <div class="bar-r">
-    <div class="live"><div class="live-dot"></div>LIVE</div>
+    <div class="live" id="sync-status"></div>
     <span id="ts">—</span>
-    <button class="btn" id="btn-ref" onclick="boot()"><span class="ri">↻</span> Refresh</button>
+    <button class="btn" id="btn-theme" onclick="toggleTheme()">☀️ Light</button>
+    <button class="btn" id="btn-ref" onclick="boot(true)"><span class="ri">↻</span> Refresh</button>
   </div>
 </div>
 
@@ -355,7 +352,7 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
       </div>
 
       <div class="sec">
-        <div class="sh">Live Sources <a href="https://doed.gov.np" target="_blank">doed.gov.np ↗</a></div>
+        <div class="sh" style="margin-bottom:12px;">Live Sources <a href="https://doed.gov.np" target="_blank" style="margin-left:auto;">doed.gov.np ↗</a></div>
         <div class="srcl" id="srcl"></div>
       </div>
     </div>
@@ -373,7 +370,10 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
         <div class="lr"><div class="ld2" style="background:var(--cc)"></div>Construction</div>
         <div class="lr"><div class="ld2" style="background:var(--cac)"></div>App. Constr.</div>
         <div class="lr"><div class="ld2" style="background:var(--co)"></div>Operational</div>
-        <div class="lr" style="margin-top:4px;font-size:.57rem;color:var(--t3)">● size ∝ MW · dashed = boundary</div>
+        <div class="lr" style="margin-top:8px; padding-top:8px; border-top:1px solid var(--b2); display:block; color:var(--t3); line-height:1.6;">
+          ● Center Point (Scales w/ MW)<br/>
+          <span style="font-family:monospace; letter-spacing:-1px;">⬚</span> Dashed Boundary Box
+        </div>
       </div>
       <div class="mov" id="map-sb">Click a marker or row to select</div>
     </div>
@@ -388,7 +388,6 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
         </span>
         <div class="tbar-r">
           <button class="btn" onclick="exportCSV()">⬇ CSV</button>
-          <a class="btn" href="https://doed.gov.np" target="_blank">↗ DoED</a>
         </div>
       </div>
       <div class="tsc">
@@ -462,44 +461,76 @@ var SRCS=[
   {id:'o2', label:'Power Plants <1MW', url:'https://doed.gov.np/pages/powerplantslessthan1/', stg:'operational'}
 ];
 
-/* Set up Chart.js Defaults for Dark Mode */
-Chart.defaults.color = '#8b949e';
+/* ══ THEME HANDLING ══ */
+var gridConfig = { color: 'rgba(255, 255, 255, 0.05)', tickColor: 'transparent' };
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(13, 17, 23, 0.9)';
 Chart.defaults.plugins.tooltip.borderColor = '#30363d';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
 Chart.defaults.plugins.legend.labels.usePointStyle = true;
 Chart.defaults.plugins.legend.labels.boxWidth = 8;
-var gridConfig = { color: 'rgba(255, 255, 255, 0.05)', tickColor: 'transparent' };
 
-/* ══ PROXY POOL (Optimized for speed) ══ */
+window.toggleTheme = function() {
+    var root = document.documentElement;
+    if(root.getAttribute('data-theme') === 'light') {
+        root.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'dark');
+        document.getElementById('btn-theme').textContent = '☀️ Light';
+        Chart.defaults.color = '#8b949e';
+        gridConfig.color = 'rgba(255, 255, 255, 0.05)';
+    } else {
+        root.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        document.getElementById('btn-theme').textContent = '🌙 Dark';
+        Chart.defaults.color = '#57606a';
+        gridConfig.color = 'rgba(0, 0, 0, 0.05)';
+    }
+    if(cInstances.pie) { cInstances.pie.options.plugins.legend.labels.color = Chart.defaults.color; cInstances.pie.update(); }
+    if(cInstances.barMW) { cInstances.barMW.options.scales.x.ticks.color = Chart.defaults.color; cInstances.barMW.options.scales.y.ticks.color = Chart.defaults.color; cInstances.barMW.options.scales.y.grid.color = gridConfig.color; cInstances.barMW.update(); }
+    if(cInstances.barDist) { cInstances.barDist.options.scales.x.ticks.color = Chart.defaults.color; cInstances.barDist.options.scales.y.ticks.color = Chart.defaults.color; cInstances.barDist.options.scales.y.grid.color = gridConfig.color; cInstances.barDist.update(); }
+};
+
+function initTheme() {
+    if (localStorage.getItem('theme') === 'light') {
+        document.getElementById('btn-theme').textContent = '🌙 Dark';
+        Chart.defaults.color = '#57606a';
+        gridConfig.color = 'rgba(0, 0, 0, 0.05)';
+    } else {
+        document.getElementById('btn-theme').textContent = '☀️ Light';
+        Chart.defaults.color = '#8b949e';
+    }
+}
+initTheme();
+
+function updateSyncStatus(state) {
+   var el = document.getElementById('sync-status');
+   if(state === 'SYNCING') {
+       el.innerHTML = '<div class="spinner"></div><span style="color:var(--acc)">SYNCING</span>';
+   } else if(state === 'CACHED') {
+       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED (Click Refresh for Live)</span>';
+   } else if(state === 'LIVE') {
+       el.innerHTML = '<div class="live-dot" style="background:var(--co); animation:bk 2s infinite"></div><span style="color:var(--co)">LIVE</span>';
+   } else {
+       el.innerHTML = '<div class="spinner"></div><span style="color:var(--cas)">' + state + '</span>';
+   }
+}
+
+/* ══ ADVANCED PROXY POOL (Handling DOED Blocks) ══ */
 var PROXIES=[
-  {pfx:'https://api.allorigins.win/raw?url=',       enc:true},
-  {pfx:'https://corsproxy.io/?url=',                enc:true},
-  {pfx:'https://api.codetabs.com/v1/proxy?quest=',  enc:false}
+  {pfx:'https://api.allorigins.win/get?url=', enc:true, isJson:true},
+  {pfx:'https://api.codetabs.com/v1/proxy?quest=', enc:false, isJson:false},
+  {pfx:'https://corsproxy.io/?url=', enc:true, isJson:false},
+  {pfx:'https://thingproxy.freeboard.io/fetch/', enc:false, isJson:false}
 ];
 
 var DP={
-  TAPLEJUNG:'Koshi',PANCHTHAR:'Koshi',ILAM:'Koshi',JHAPA:'Koshi',MORANG:'Koshi',
-  SUNSARI:'Koshi',DHANKUTA:'Koshi',TERHATHUM:'Koshi',BHOJPUR:'Koshi',
-  SOLUKHUMBU:'Koshi',OKHALDHUNGA:'Koshi',KHOTANG:'Koshi',UDAYAPUR:'Koshi',SANKHUWASABHA:'Koshi',
-  SAPTARI:'Madhesh',SIRAHA:'Madhesh',DHANUSA:'Madhesh',MAHOTTARI:'Madhesh',
-  SARLAHI:'Madhesh',RAUTAHAT:'Madhesh',BARA:'Madhesh',PARSA:'Madhesh',
-  SINDHULI:'Bagmati',RAMECHHAP:'Bagmati',DOLAKHA:'Bagmati',SINDHUPALCHOK:'Bagmati',
-  KAVREPALANCHOK:'Bagmati',KABHREPALANCHOK:'Bagmati',LALITPUR:'Bagmati',
-  BHAKTAPUR:'Bagmati',KATHMANDU:'Bagmati',NUWAKOT:'Bagmati',RASUWA:'Bagmati',
-  DHADING:'Bagmati',MAKWANPUR:'Bagmati',MAKAWANPUR:'Bagmati',CHITWAN:'Bagmati',CHITAWAN:'Bagmati',
-  GORKHA:'Gandaki',LAMJUNG:'Gandaki',TANAHU:'Gandaki',SYANGJA:'Gandaki',KASKI:'Gandaki',
-  MANANG:'Gandaki',MUSTANG:'Gandaki',MYAGDI:'Gandaki',PARBAT:'Gandaki',
-  NAWALPARASI:'Gandaki',BAGLUNG:'Gandaki',NAWALPUR:'Gandaki',
-  RUPANDEHI:'Lumbini',KAPILBASTU:'Lumbini',ARGHAKHANCHI:'Lumbini',PALPA:'Lumbini',
-  GULMI:'Lumbini',PYUTHAN:'Lumbini',ROLPA:'Lumbini',RUKUM:'Lumbini',
-  DANG:'Lumbini',BANKE:'Lumbini',BARDIYA:'Lumbini',
-  SURKHET:'Karnali',DAILEKH:'Karnali',JAJARKOT:'Karnali',DOLPA:'Karnali',
-  JUMLA:'Karnali',KALIKOT:'Karnali',MUGU:'Karnali',SALYAN:'Karnali',HUMLA:'Karnali',
-  BAJURA:'Sudurpaschim',BAJHANG:'Sudurpaschim',ACHHAM:'Sudurpaschim',DOTI:'Sudurpaschim',
-  KAILALI:'Sudurpaschim',KANCHANPUR:'Sudurpaschim',DADELDHURA:'Sudurpaschim',
-  BAITADI:'Sudurpaschim',DARCHULA:'Sudurpaschim'
+  TAPLEJUNG:'Koshi',PANCHTHAR:'Koshi',ILAM:'Koshi',JHAPA:'Koshi',MORANG:'Koshi',SUNSARI:'Koshi',DHANKUTA:'Koshi',TERHATHUM:'Koshi',BHOJPUR:'Koshi',SOLUKHUMBU:'Koshi',OKHALDHUNGA:'Koshi',KHOTANG:'Koshi',UDAYAPUR:'Koshi',SANKHUWASABHA:'Koshi',
+  SAPTARI:'Madhesh',SIRAHA:'Madhesh',DHANUSA:'Madhesh',MAHOTTARI:'Madhesh',SARLAHI:'Madhesh',RAUTAHAT:'Madhesh',BARA:'Madhesh',PARSA:'Madhesh',
+  SINDHULI:'Bagmati',RAMECHHAP:'Bagmati',DOLAKHA:'Bagmati',SINDHUPALCHOK:'Bagmati',KAVREPALANCHOK:'Bagmati',KABHREPALANCHOK:'Bagmati',LALITPUR:'Bagmati',BHAKTAPUR:'Bagmati',KATHMANDU:'Bagmati',NUWAKOT:'Bagmati',RASUWA:'Bagmati',DHADING:'Bagmati',MAKWANPUR:'Bagmati',MAKAWANPUR:'Bagmati',CHITWAN:'Bagmati',CHITAWAN:'Bagmati',
+  GORKHA:'Gandaki',LAMJUNG:'Gandaki',TANAHU:'Gandaki',SYANGJA:'Gandaki',KASKI:'Gandaki',MANANG:'Gandaki',MUSTANG:'Gandaki',MYAGDI:'Gandaki',PARBAT:'Gandaki',NAWALPARASI:'Gandaki',BAGLUNG:'Gandaki',NAWALPUR:'Gandaki',
+  RUPANDEHI:'Lumbini',KAPILBASTU:'Lumbini',ARGHAKHANCHI:'Lumbini',PALPA:'Lumbini',GULMI:'Lumbini',PYUTHAN:'Lumbini',ROLPA:'Lumbini',RUKUM:'Lumbini',DANG:'Lumbini',BANKE:'Lumbini',BARDIYA:'Lumbini',
+  SURKHET:'Karnali',DAILEKH:'Karnali',JAJARKOT:'Karnali',DOLPA:'Karnali',JUMLA:'Karnali',KALIKOT:'Karnali',MUGU:'Karnali',SALYAN:'Karnali',HUMLA:'Karnali',
+  BAJURA:'Sudurpaschim',BAJHANG:'Sudurpaschim',ACHHAM:'Sudurpaschim',DOTI:'Sudurpaschim',KAILALI:'Sudurpaschim',KANCHANPUR:'Sudurpaschim',DADELDHURA:'Sudurpaschim',BAITADI:'Sudurpaschim',DARCHULA:'Sudurpaschim'
 };
 
 function getProv(raw){
@@ -520,13 +551,14 @@ function vLat(v){return !isNaN(v)&&v>=25&&v<=32;}
 function vLon(v){return !isNaN(v)&&v>=79&&v<=90;}
 function fDec(v){return isNaN(v)?'':v.toFixed(5);}
 
-function parseTable(html, stage){
+/* DOED Parser (Handles 13 & 14 col variants) */
+function parseTable(html, src){
   var doc=(new DOMParser()).parseFromString(html,'text/html');
   var out=[];
   doc.querySelectorAll('table').forEach(function(tbl){
     var rows=Array.from(tbl.querySelectorAll('tr'));
     var dataStart=-1;
-    for(var i=0;i<rows.length&&i<10;i++){
+    for(var i=0;i<rows.length&&i<20;i++){
       if(rows[i].querySelectorAll('td').length>=13){ dataStart=i; break; }
     }
     if(dataStart<0) return;
@@ -534,13 +566,28 @@ function parseTable(html, stage){
     rows.slice(dataStart).forEach(function(r){
       var cells=Array.from(r.querySelectorAll('td'));
       if(cells.length<13) return;
-      var cv=function(i){ return cells[i]?cells[i].textContent.trim():''; };
+      var cv=function(i){ return cells[i]?cells[i].textContent.trim().replace(/\s+/g, ' '):''; };
 
       var name=cv(1);
       if(!name||name.length<2||/total|जम्मा|grand/i.test(name)) return;
-
       var mw=parseFloat(cv(2).replace(/,/g,''))||0;
-      var lat1=dms2dec(cv(9)), lat2=dms2dec(cv(10)), lon1=dms2dec(cv(11)), lon2=dms2dec(cv(12));
+      
+      var licno, issue, validity, promoter, address, lat1, lat2, lon1, lon2, vdcRaw;
+
+      // Apps (13 cols) vs License (14+ cols)
+      if(cells.length === 13) {
+        licno = cv(4); issue = cv(5); validity = '—';
+        promoter = cv(6); address = cv(7);
+        lat1 = dms2dec(cv(8)); lat2 = dms2dec(cv(9));
+        lon1 = dms2dec(cv(10)); lon2 = dms2dec(cv(11));
+        vdcRaw = cv(12);
+      } else {
+        licno = cv(4); issue = cv(5); validity = cv(6);
+        promoter = cv(7); address = cv(8);
+        lat1 = dms2dec(cv(9)); lat2 = dms2dec(cv(10));
+        lon1 = dms2dec(cv(11)); lon2 = dms2dec(cv(12));
+        vdcRaw = cv(13);
+      }
 
       if(!vLat(lat1)) lat1=NaN; if(!vLat(lat2)) lat2=NaN;
       if(!vLon(lon1)) lon1=NaN; if(!vLon(lon2)) lon2=NaN;
@@ -549,7 +596,7 @@ function parseTable(html, stage){
       if(!isNaN(lat1)&&!isNaN(lat2)) clat=(lat1+lat2)/2; else if(!isNaN(lat1)) clat=lat1;
       if(!isNaN(lon1)&&!isNaN(lon2)) clon=(lon1+lon2)/2; else if(!isNaN(lon1)) clon=lon1;
 
-      var vdcRaw=cv(13), province=getProv(vdcRaw);
+      var province=getProv(vdcRaw);
       var dMatch=vdcRaw.match(/\(([^)]+)\)/);
       var district=dMatch?dMatch[1].trim():'—';
       var allDists=[], re=/\(([^)]+)\)/g, mm;
@@ -557,35 +604,79 @@ function parseTable(html, stage){
       if(allDists.length) district=allDists.join(', ');
 
       out.push({
-        name:name, mw:mw, stage:stage, licno:cv(4), issue:cv(5), validity:cv(6),
-        promoter:cv(7), address:cv(8), lat1:lat1, lat2:lat2, lon1:lon1, lon2:lon2,
+        sourceId:src.id, name:name, mw:mw, stage:src.stg, licno:licno, issue:issue, validity:validity,
+        promoter:promoter, address:address, lat1:lat1, lat2:lat2, lon1:lon1, lon2:lon2,
         clat:clat, clon:clon, vdc:vdcRaw, district:district, province:province, river:cv(3)
       });
     });
   });
+  if(out.length === 0) throw new Error("Empty Table");
   return out;
 }
 
-/* ══ FETCH ENGINE (Parallelized for Speed) ══ */
+/* ToolsForEngineers Fallback Parser */
+function parseTFE(html) {
+    var doc = (new DOMParser()).parseFromString(html, 'text/html');
+    var out =[];
+    var target = Array.from(doc.querySelectorAll('table')).find(t => t.textContent.includes('Province'));
+    if(target) {
+        target.querySelectorAll('tr').forEach(r=>{
+            var tds = r.querySelectorAll('td');
+            if(tds.length >= 13){
+                var cv = i => tds[i]?tds[i].textContent.trim():'';
+                var name = cv(0);
+                if(!name || name==='Project ▲' || name==='Project') return;
+                var mw = parseFloat(cv(1).replace(/,/g,''))||0;
+                var stageStr = cv(2).toLowerCase();
+                var stg = 'survey';
+                if(stageStr.includes('application for survey')) stg='appsurvey';
+                else if(stageStr.includes('application for construction')) stg='appconstruction';
+                else if(stageStr.includes('construction')) stg='construction';
+                else if(stageStr.includes('operational')) stg='operational';
+
+                var lat = parseFloat(cv(11)); var lon = parseFloat(cv(12));
+                out.push({
+                    name: name, mw: mw, stage: stg,
+                    licno: cv(5), issue: cv(6), validity: cv(7),
+                    promoter: cv(8), address: cv(9),
+                    lat1: lat, lat2: lat, lon1: lon, lon2: lon,
+                    clat: lat, clon: lon,
+                    vdc: cv(10), district: cv(10), province: cv(3), river: cv(4)
+                });
+            }
+        });
+    }
+    return out;
+}
+
+/* ══ FETCH ENGINE ══ */
 var _proxyOffset=0;
 function fetchSrc(src, onSuccess, onFail){
-  var startProxy=(_proxyOffset++)%PROXIES.length;
-  var tried=0;
+  var startProxy = (_proxyOffset++) % PROXIES.length;
+  var tried=0, maxTries = PROXIES.length * 2; 
 
   function attempt(rawIdx){
-    if(tried>=PROXIES.length){ onFail(); return; }
+    if(tried >= maxTries){ onFail(); return; }
     tried++;
-    var proxy=PROXIES[rawIdx%PROXIES.length];
-    var fullUrl=proxy.pfx+(proxy.enc?encodeURIComponent(src.url):src.url);
-    var ab=new AbortController(), timer=setTimeout(function(){ ab.abort(); attempt(rawIdx+1); }, 15000);
+    var proxy = PROXIES[rawIdx % PROXIES.length];
+    var fullUrl = proxy.pfx + (proxy.enc ? encodeURIComponent(src.url) : src.url);
+    var ab = new AbortController(), timer = setTimeout(function(){ ab.abort(); attempt(rawIdx+1); }, 15000);
 
     fetch(fullUrl, {signal:ab.signal})
-      .then(function(r){ if(!r.ok) throw new Error(); return r.text(); })
-      .then(function(html){
+      .then(function(r){ 
+          if(!r.ok) throw new Error(); 
+          return proxy.isJson ? r.json() : r.text(); 
+      })
+      .then(function(data){
         clearTimeout(timer);
+        var html = proxy.isJson ? data.contents : data;
+        if(!html || typeof html !== 'string') throw new Error("Empty Response");
         if(html.trim().charAt(0)==='{'){ try{ var j=JSON.parse(html); if(j.contents) html=j.contents; }catch(e){} }
-        var ps=parseTable(html, src.stg);
-        if(!ps.length){ attempt(rawIdx+1); return; }
+        
+        var lowerHtml = html.toLowerCase();
+        if(!lowerHtml.includes('department of electricity development') && !lowerHtml.includes('doed')) throw new Error("Proxy Block");
+        
+        var ps=parseTable(html, src);
         onSuccess(ps);
       })
       .catch(function(){ clearTimeout(timer); attempt(rawIdx+1); });
@@ -593,18 +684,36 @@ function fetchSrc(src, onSuccess, onFail){
   attempt(startProxy);
 }
 
+function fetchTFEFallback(onSuccess) {
+    var proxy = PROXIES[0]; // use reliable allorigins
+    var url = proxy.pfx + encodeURIComponent('https://hydropower.toolsforengineers.com/');
+    fetch(url).then(r=>r.json()).then(data=>{
+        var html = data.contents;
+        onSuccess(parseTFE(html)); 
+    }).catch(e=> onSuccess([]));
+}
+
+/* ══ DATA CACHING ══ */
+var CACHE_KEY = 'nepalHydroData';
+function loadCache() { try { var d = localStorage.getItem(CACHE_KEY); if (d) { ALL = JSON.parse(d); } } catch(e) {} }
+function saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(ALL)); } catch(e) {} }
+
 /* ══ STATE ══ */
 var ALL=[], FILT=[], SON={survey:1,appsurvey:1,construction:1,appconstruction:1,operational:1};
 var PROV='all', MWMIN=0, MWMAX=Infinity, SCOL='mw', SDIR='desc', SEL=null, STAT={};
 var cInstances={ pie:null, barMW:null, barDist:null };
+var freshData = {};
 
-/* ══ MAP ══ */
-var map=L.map('map',{center:[28.2,84.1],zoom:7});
+/* ══ MAP (with maxZoom Fix) ══ */
+// maxZoom is explicitly set to 24 on the L.map container allowing infinite scaling
+var map=L.map('map',{center:[28.2,84.1], zoom:7, zoomControl:false, maxZoom:24});
+L.control.zoom({ position: 'topleft' }).addTo(map);
+
 var TILES={
-  osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}),
-  topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17}),
-  esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}),
-  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19})
+  osm: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:24, maxNativeZoom:19, attribution:'© OpenStreetMap © CARTO'}),
+  topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:24, maxNativeZoom:18, attribution:'© Esri'}),
+  esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:24, maxNativeZoom:18, attribution:'© Esri'}),
+  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:24, maxNativeZoom:19, attribution:'© CARTO'})
 };
 var curBase='osm'; TILES.osm.addTo(map);
 
@@ -622,51 +731,108 @@ var showMk=true, showBd=true, markerMap={};
 document.getElementById('lmk').onchange=function(){showMk=this.checked; if(showMk)mkLyr.addTo(map);else map.removeLayer(mkLyr);};
 document.getElementById('lbd').onchange=function(){showBd=this.checked; if(showBd)bdLyr.addTo(map);else map.removeLayer(bdLyr);};
 
-/* ══ BOOT (Concurrent fetching) ══ */
-function boot(){
-  document.getElementById('ldr').classList.remove('gone');
-  document.getElementById('btn-ref').classList.add('sp');
-  ALL=[]; SRCS.forEach(function(s){STAT[s.id]='pend';});
-  renderSrcList(); renderLdr();
-  
-  var done=0, n=SRCS.length;
-  function onSrcDone(){
-    done++; document.getElementById('ldr-fill').style.width=Math.round(done/n*100)+'%';
-    renderLdr(); renderSrcList(); updateKPIs(); applyFilters();
-    if(done===n) onAllDone();
+/* ══ BOOT (Cached approach with robust fallback) ══ */
+window.boot = function(forceRefresh){
+  if(!forceRefresh) {
+      loadCache();
+      if(ALL.length > 0) {
+          updateSyncStatus('CACHED');
+          SRCS.forEach(function(s){STAT[s.id]='ok (cache)';});
+          renderSrcList(); updateKPIs(); applyFilters();
+          return;
+      }
   }
 
-  // Launch all fetches concurrently to maximize speed
+  document.getElementById('btn-ref').classList.add('sp');
+  updateSyncStatus('SYNCING');
+  
+  var pbar = document.getElementById('top-progress');
+  pbar.style.transition = 'none'; pbar.style.width = '0%'; pbar.style.opacity = '1';
+  setTimeout(() => { pbar.style.transition = 'width 0.3s ease, opacity 0.3s ease'; pbar.style.width = '5%'; }, 50);
+
+  freshData = {};
+  var done = 0, n = SRCS.length;
+  SRCS.forEach(function(s){STAT[s.id]='ld';});
+  renderSrcList();
+  
   SRCS.forEach(function(src){
-    STAT[src.id]='ld'; renderLdr(); renderSrcList();
     fetchSrc(src, function(ps){
-      var existing={}; ALL.forEach(function(p){ existing[(p.name||'').trim().toLowerCase()+'|'+p.stage]=1; });
-      ps.forEach(function(p){ var k=(p.name||'').trim().toLowerCase()+'|'+p.stage; if(!existing[k]){ ALL.push(p); existing[k]=1; } });
-      STAT[src.id]='ok'; onSrcDone();
-    }, function(){ STAT[src.id]='fail'; onSrcDone(); });
+      freshData[src.id] = ps; STAT[src.id]='ok';
+      onSrcDone();
+    }, function(){
+      STAT[src.id]='fail';
+      onSrcDone();
+    });
   });
-}
 
-function onAllDone(){
-  var now=new Date();
-  document.getElementById('ts').textContent=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  setTimeout(function(){ document.getElementById('ldr').classList.add('gone'); document.getElementById('btn-ref').classList.remove('sp'); }, 500);
-}
+  function onSrcDone(){
+    done++;
+    pbar.style.width = Math.round((done/n)*100) + '%';
+    
+    if(done === n) {
+      var hasFails = SRCS.some(s => STAT[s.id] === 'fail');
+      if(hasFails) {
+          updateSyncStatus('FETCHING FALLBACK...');
+          fetchTFEFallback(function(tfeData) { finalizeData(tfeData); });
+      } else {
+          finalizeData([]);
+      }
+    }
+  }
 
-function renderLdr(){
-  document.getElementById('ldr-items').innerHTML=SRCS.map(function(s){
-    var st=STAT[s.id]||'pend', cls=st==='ok'?'ok':st==='ld'?'ld':st==='fail'?'fail':'pend';
-    var lbl=(st==='ok'?'✓ ':st==='ld'?'… ':st==='fail'?'✗ ':'· ')+s.label;
-    return '<div class="ldi '+cls+'"><div class="d"></div><span>'+esc(lbl)+'</span></div>';
-  }).join('');
-}
+  function finalizeData(tfeData) {
+    var newAll =[], seen = {};
+    function addItems(items, sid) {
+      items.forEach(function(p){
+        var k = (p.name||'').trim().toLowerCase() + '|' + p.stage;
+        if(!seen[k]){ if(sid) p.sourceId = sid; newAll.push(p); seen[k]=true; }
+      });
+    }
+    
+    SRCS.forEach(function(s){
+       if (STAT[s.id] === 'ok' && freshData[s.id]) { 
+           addItems(freshData[s.id], s.id); 
+       } else { 
+           var tfeMatches = tfeData.filter(p => p.stage === s.stg);
+           if(tfeMatches.length > 0) {
+               addItems(tfeMatches, s.id);
+               STAT[s.id] = 'ok (fallback)';
+           } else {
+               var cachedItems = ALL.filter(function(x){ return x.sourceId === s.id; });
+               if (cachedItems.length > 0) {
+                   addItems(cachedItems, s.id);
+                   STAT[s.id] = 'ok (cache)';
+               }
+           }
+       }
+    });
+    
+    ALL = newAll; saveCache();
+    var now = new Date();
+    document.getElementById('ts').textContent = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    updateSyncStatus('LIVE');
+    renderSrcList(); updateKPIs(); applyFilters();
+    
+    setTimeout(function(){ 
+       pbar.style.opacity = '0'; 
+       document.getElementById('btn-ref').classList.remove('sp'); 
+       setTimeout(function(){ pbar.style.width = '0%'; }, 300);
+    }, 500);
+  }
+};
 
 function renderSrcList(){
   document.getElementById('srcl').innerHTML=SRCS.map(function(s){
-    var st=STAT[s.id]||'pend', col=st==='ok'?'var(--co)':st==='ld'?'var(--acc)':st==='fail'?'#f85149':'var(--b1)';
-    var lbl=st==='ok'?'✓':st==='ld'?'…':st==='fail'?'✗':'·';
-    var rty=st==='fail'?'<button onclick="retrySrc(\''+s.id+'\')" style="margin-left:4px;background:rgba(248,81,73,.15);border:1px solid #f85149;color:#f85149;border-radius:3px;padding:1px 5px;font-size:.58rem;cursor:pointer">retry</button>':'';
-    return '<div class="sri"><div class="sdot2" style="background:'+col+'"></div><a href="'+s.url+'" target="_blank">'+esc(s.label)+'</a><span class="sst" style="color:'+col+'">'+lbl+'</span>'+rty+'</div>';
+    var st=STAT[s.id]||'pend', isOk=st.startsWith('ok');
+    
+    var col = '#f85149'; 
+    var lbl = '✗ Failed';
+    if(st === 'ok') { col = 'var(--co)'; lbl = '✓ Live'; }
+    else if(st === 'ok (fallback)') { col = 'var(--cas)'; lbl = '⚡ Fallback'; }
+    else if(st === 'ok (cache)') { col = 'var(--acc)'; lbl = '💾 Cache'; }
+    else if(st === 'ld') { col = 'var(--acc)'; lbl = '… Syncing'; }
+
+    return '<div class="sri"><div class="sdot2" style="background:'+col+'"></div><a href="'+s.url+'" target="_blank">'+esc(s.label)+'</a><span class="sst" style="color:'+col+'">'+lbl+'</span></div>';
   }).join('');
 }
 
@@ -681,7 +847,7 @@ function updateKPIs(){
   document.getElementById('kv-t').textContent=ALL.length;
 }
 
-/* ══ FILTER & RENDER (Instant string-based DOM Updates) ══ */
+/* ══ FILTER & RENDER ══ */
 function applyFilters(){
   var q=(document.getElementById('fq').value||'').toLowerCase().trim();
   FILT=ALL.filter(function(p){
@@ -699,10 +865,16 @@ function applyFilters(){
   renderTable(); renderMap(); renderCharts();
 }
 
-/* Highly optimized table rendering via string concat & Event Delegation */
 function renderTable(){
   var tb = document.getElementById('tbody');
   
+  if (FILT.length === 0) {
+    var isSyncing = Object.values(STAT).some(s => s === 'ld' || s === 'pend');
+    var msg = isSyncing ? 'Syncing live data... Please wait.' : 'No projects found matching the criteria.';
+    tb.innerHTML = '<tr><td colspan="15" style="text-align:center; padding: 40px; font-style: italic; color: var(--t3);">'+msg+'</td></tr>';
+    return;
+  }
+
   var data=FILT.slice().sort(function(a,b){
     var av=a[SCOL], bv=b[SCOL];
     if(SCOL==='name'||SCOL==='stage'||SCOL==='river'||SCOL==='district') { av=String(av||'').toLowerCase(); bv=String(bv||'').toLowerCase(); }
@@ -720,10 +892,10 @@ function renderTable(){
       '<td class="nm" title="'+esc(p.name)+'">'+esc(p.name)+'</td>'+
       '<td class="mwcol">'+(p.mw?p.mw.toFixed(2):'—')+'</td>'+
       '<td><span class="tag '+cfg.tcls+'">'+cfg.label+'</span></td>'+
-      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.licno||'—')+'</td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem" title="'+esc(p.licno||'')+'">'+esc(p.licno||'—')+'</td>'+
       '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.issue||'—')+'</td>'+
       '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.validity||'—')+'</td>'+
-      '<td>'+esc(p.river||'—')+'</td>'+
+      '<td title="'+esc(p.river||'')+'">'+esc(p.river||'—')+'</td>'+
       '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis" title="'+esc(p.promoter||'')+'">'+esc(p.promoter||'—')+'</td>'+
       '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-size:.67rem" title="'+esc(p.address||'')+'">'+esc(p.address||'—')+'</td>'+
       '<td class="coord">'+(isNaN(p.lat1)?'—':p.lat1.toFixed(5))+'</td>'+
@@ -736,7 +908,6 @@ function renderTable(){
   tb.innerHTML = html;
 }
 
-// Global Event Delegation for Row Clicks (Super fast)
 document.getElementById('tbody').addEventListener('click', function(e){
   var tr = e.target.closest('tr');
   if(!tr) return;
@@ -751,17 +922,28 @@ function renderMap(){
     var cfg=SCFG[p.stage]; if(!cfg) return;
     var isSel=SEL&&SEL.name===p.name&&SEL.stage===p.stage;
 
+    // Enhanced Boundary
     if(showBd&&!isNaN(p.lat1)&&!isNaN(p.lat2)&&!isNaN(p.lon1)&&!isNaN(p.lon2)){
       var sLat=Math.min(p.lat1,p.lat2),nLat=Math.max(p.lat1,p.lat2), wLon=Math.min(p.lon1,p.lon2),eLon=Math.max(p.lon1,p.lon2);
       if(nLat-sLat<5&&eLon-wLon<5){
-        var rect=L.rectangle([[sLat,wLon],[nLat,eLon]],{ color:cfg.color,weight:1.2,opacity:.55, fillColor:cfg.color,fillOpacity:.06,dashArray:'5,4' });
+        var rect=L.rectangle([[sLat,wLon],[nLat,eLon]],{ 
+            color: cfg.color, weight: isSel ? 3 : 2, opacity: isSel ? 1 : 0.85, 
+            fillColor: cfg.color, fillOpacity: isSel ? 0.25 : 0.15, dashArray: '4,4' 
+        });
         rect.on('click',function(e){L.DomEvent.stopPropagation(e);selectProj(p);});
         rect.bindTooltip('<b>'+esc(p.name)+'</b><br/>'+cfg.label+(p.mw?' · '+p.mw.toFixed(2)+' MW':'')); bdLyr.addLayer(rect);
       }
     }
+    
+    // Scaled Marker - smaller radius scaling factor
     if(showMk&&!isNaN(p.clat)&&!isNaN(p.clon)){
-      var mk=L.circleMarker([p.clat,p.clon],{ radius:isSel?10:7, color:isSel?'#ffffff':cfg.color, weight:isSel?2.5:1.5, fillColor:cfg.color, fillOpacity:isSel?0.98:0.78, zIndexOffset:isSel?1000:0 });
-      mk.bindPopup('<div style="min-width:195px"><b>'+esc(p.name)+'</b><br/><span style="color:'+cfg.color+';font-size:.6rem;font-weight:700">'+cfg.label+'</span><div style="margin-top:6px;font-size:.72rem;color:#8b949e">'+(p.mw?'<b style="color:#e6edf3">'+p.mw.toFixed(2)+' MW</b><br/>':'')+(p.district!=='—'?'📍 '+esc(p.district)+'<br/>':'')+(!isNaN(p.clat)?'🌐 '+p.clat.toFixed(4)+'°N, '+p.clon.toFixed(4)+'°E':'')+'</div></div>');
+      var baseR = Math.max(3, Math.min(9, 3 + Math.sqrt(p.mw || 0) * 0.4)); // Scaled down globally
+      var mk=L.circleMarker([p.clat,p.clon],{ 
+          radius: isSel ? baseR + 4 : baseR, 
+          color: isSel ? '#ffffff' : cfg.color, weight: isSel ? 2.5 : 1, 
+          fillColor: cfg.color, fillOpacity: isSel ? 1 : 0.8, zIndexOffset: isSel ? 1000 : 0 
+      });
+      mk.bindPopup('<div style="min-width:195px"><b>'+esc(p.name)+'</b><br/><span style="color:'+cfg.color+';font-size:.6rem;font-weight:700">'+cfg.label+'</span><div style="margin-top:6px;font-size:.72rem;color:var(--t2)">'+(p.mw?'<b style="color:var(--t1)">'+p.mw.toFixed(2)+' MW</b><br/>':'')+(p.district!=='—'?'📍 '+esc(p.district)+'<br/>':'')+(!isNaN(p.clat)?'🌐 '+p.clat.toFixed(4)+'°N, '+p.clon.toFixed(4)+'°E':'')+'</div></div>');
       mk.on('click',function(e){L.DomEvent.stopPropagation(e);selectProj(p);});
       markerMap[p.name+'|'+p.stage]=mk; mkLyr.addLayer(mk);
     }
@@ -789,7 +971,7 @@ function renderDetail(p){
   document.getElementById('det').innerHTML=html;
 }
 
-/* ══ CHARTS (Optimized with Chart.js) ══ */
+/* ══ CHARTS ══ */
 function renderCharts() {
   var sc={}, mwc={}, dm={};
   Object.keys(SCFG).forEach(k => { sc[k]=0; mwc[k]=0; });
@@ -805,32 +987,29 @@ function renderCharts() {
   var scData = Object.keys(SCFG).map(k => sc[k]);
   var mwcData = Object.keys(SCFG).map(k => Math.round(mwc[k]));
 
-  // PIE CHART: Stage Count
   if (cInstances.pie) cInstances.pie.destroy();
   cInstances.pie = new Chart(document.getElementById('chartStagePie'), {
     type: 'pie',
-    data: { labels: stgLabels, datasets:[{ data: scData, backgroundColor: stgColors, borderWidth: 1, borderColor: '#1c2128' }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {font: {size: 10}} } } }
+    data: { labels: stgLabels, datasets:[{ data: scData, backgroundColor: stgColors, borderWidth: 1, borderColor: 'var(--p1)' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {font: {size: 10, color: Chart.defaults.color}} } } }
   });
 
-  // BAR CHART: MW by Stage
   if (cInstances.barMW) cInstances.barMW.destroy();
   cInstances.barMW = new Chart(document.getElementById('chartMwBar'), {
     type: 'bar',
     data: { labels: stgLabels.map(l=>l.replace(' License','').replace('App. ','A.')), datasets:[{ label: 'Total MW', data: mwcData, backgroundColor: stgColors, borderRadius: 3 }] },
-    options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } }, y: { grid: gridConfig, beginAtZero: true } }, plugins: { legend: { display: false } } }
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks:{color:Chart.defaults.color}, grid: { display: false } }, y: { ticks:{color:Chart.defaults.color}, grid: gridConfig, beginAtZero: true } }, plugins: { legend: { display: false } } }
   });
 
-  // BAR CHART: Top Districts
   var dtop = Object.entries(dm).sort((a,b)=>b[1]-a[1]).slice(0, 7);
   if (cInstances.barDist) cInstances.barDist.destroy();
   cInstances.barDist = new Chart(document.getElementById('chartDistBar'), {
     type: 'bar',
     data: { 
       labels: dtop.map(d=>d[0].length>10?d[0].substring(0,10)+'..':d[0]), 
-      datasets:[{ label: 'Projects', data: dtop.map(d=>d[1]), backgroundColor: '#1f6feb', borderRadius: 3 }] 
+      datasets:[{ label: 'Projects', data: dtop.map(d=>d[1]), backgroundColor: 'var(--acc2)', borderRadius: 3 }] 
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } }, y: { grid: gridConfig, beginAtZero: true } }, plugins: { legend: { display: false } } }
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks:{color:Chart.defaults.color}, grid: { display: false } }, y: { ticks:{color:Chart.defaults.color}, grid: gridConfig, beginAtZero: true } }, plugins: { legend: { display: false } } }
   });
 }
 
@@ -849,12 +1028,12 @@ function bindEvs(){
 }
 function dragH(el,fn){ var on=false,lx=0; el.addEventListener('mousedown',function(e){on=true;lx=e.clientX;el.classList.add('on');document.body.style.cssText='cursor:col-resize;user-select:none';e.preventDefault();}); document.addEventListener('mousemove',function(e){if(!on)return;fn(e.clientX-lx);lx=e.clientX;}); document.addEventListener('mouseup',function(){if(on){on=false;el.classList.remove('on');document.body.style.cssText='';}}); }
 function dragV(el,fn){ var on=false,ly=0; el.addEventListener('mousedown',function(e){on=true;ly=e.clientY;el.classList.add('on');document.body.style.cssText='cursor:row-resize;user-select:none';e.preventDefault();}); document.addEventListener('mousemove',function(e){if(!on)return;fn(e.clientY-ly);ly=e.clientY;}); document.addEventListener('mouseup',function(){if(on){on=false;el.classList.remove('on');document.body.style.cssText='';}}); }
-function resetAll(){ document.getElementById('fq').value=''; document.getElementById('fmin').value=''; document.getElementById('fmax').value=''; MWMIN=0; MWMAX=Infinity; Object.keys(SON).forEach(function(k){SON[k]=1;}); document.querySelectorAll('.sg').forEach(function(b){b.classList.add('on');}); PROV='all'; document.querySelectorAll('.pv').forEach(function(b){b.classList.toggle('on',b.dataset.pv==='all');}); document.querySelectorAll('.mwq').forEach(function(b){b.classList.toggle('on',b.dataset.mw==='all');}); applyFilters(); }
-function exportCSV(){ var r=[['Project','MW','Stage','Province','District','River','Promoter','Lic/App No','Issue Date','Validity'].join(',')]; FILT.forEach(function(p){ r.push([p.name,p.mw,SCFG[p.stage]?SCFG[p.stage].label:'',p.province,p.district,p.river,p.promoter,p.licno,p.issue,p.validity].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',')); }); var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([r.join('\n')],{type:'text/csv'})); a.download='nepal-hydro-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); }
+window.resetAll = function(){ document.getElementById('fq').value=''; document.getElementById('fmin').value=''; document.getElementById('fmax').value=''; MWMIN=0; MWMAX=Infinity; Object.keys(SON).forEach(function(k){SON[k]=1;}); document.querySelectorAll('.sg').forEach(function(b){b.classList.add('on');}); PROV='all'; document.querySelectorAll('.pv').forEach(function(b){b.classList.toggle('on',b.dataset.pv==='all');}); document.querySelectorAll('.mwq').forEach(function(b){b.classList.toggle('on',b.dataset.mw==='all');}); applyFilters(); };
+window.exportCSV = function(){ var r=[['Project','MW','Stage','Province','District','River','Promoter','Lic/App No','Issue Date','Validity','Lat N Start','Lat N End','Lon E Start','Lon E End'].join(',')]; FILT.forEach(function(p){ r.push([p.name,p.mw,SCFG[p.stage]?SCFG[p.stage].label:'',p.province,p.district,p.river,p.promoter,p.licno,p.issue,p.validity,fDec(p.lat1),fDec(p.lat2),fDec(p.lon1),fDec(p.lon2)].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',')); }); var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([r.join('\n')],{type:'text/csv'})); a.download='nepal-hydro-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); };
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function deb(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
 
-bindEvs(); boot();
+bindEvs(); boot(false);
 })();
 </script>
 </body>
