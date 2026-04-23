@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<meta name="referrer" content="strict-origin-when-cross-origin"/>
-<title>Nepal Hydro | Hydropower Data & Resources</title>
+<meta name="referrer" content="no-referrer-when-downgrade"/>
+<title>Nepal Hydropower Repository</title>
 <meta name="robots" content="index, follow">
 <meta name="description" content="Nepal hydropower data, resources and reference materials curated by Ramkrishna Mahato, Civil Engineer specializing in hydropower and infrastructure development.">
 <meta name="author" content="Ramkrishna Mahato">
@@ -228,7 +228,7 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 .det-gmaps{display:block;padding:7px 12px;font-size:.67rem;font-family:var(--fd);color:var(--acc);text-decoration:none;border-top:1px solid var(--b2)}
 .det-gmaps:hover{background:rgba(88,166,255,.06)}
 
-/* CHARTS (Chart.js Wrappers) */
+/* CHARTS */
 .csec{padding:10px 12px; border-bottom:1px solid var(--b2)}
 .csec h5{font-family:var(--fh);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:12px}
 .chart-wrapper{position:relative; width:100%; height:200px; display:flex; justify-content:center; align-items:center;}
@@ -251,7 +251,7 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 <div id="top-progress"></div>
 
 <div id="bar">
-  <div class="bar-logo">🇳🇵 Nepal<em>Hydro</em></div>
+  <div class="bar-logo">🇳🇵 Nepal Hydropower<em>Repository</em></div>
   <div class="bar-src">DOED.GOV.NP</div>
   <div class="kpis">
     <div class="kpi ks"><div class="v" id="kv-s">—</div><div class="l">Survey</div></div>
@@ -265,7 +265,7 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
     <div class="live" id="sync-status"></div>
     <span id="ts">—</span>
     <button class="btn" id="btn-theme" onclick="toggleTheme()">☀️ Light</button>
-    <button class="btn" id="btn-ref" onclick="boot(true)"><span class="ri">↻</span> Refresh</button>
+    <button class="btn" id="btn-ref" onclick="window.boot(true)"><span class="ri">↻</span> Refresh</button>
   </div>
 </div>
 
@@ -344,8 +344,8 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
       <div class="sec">
         <div class="sh">Actions</div>
         <div class="ar">
-          <button class="ab" onclick="resetAll()">↺ Reset</button>
-          <button class="ab pr" onclick="exportCSV()">⬇ CSV</button>
+          <button class="ab" onclick="window.resetAll()">↺ Reset</button>
+          <button class="ab pr" onclick="window.exportCSV()">⬇ CSV</button>
         </div>
       </div>
 
@@ -385,7 +385,7 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
           <span class="mwv" id="t-mw">— MW</span>
         </span>
         <div class="tbar-r">
-          <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+          <button class="btn" onclick="window.exportCSV()">⬇ CSV</button>
         </div>
       </div>
       <div class="tsc">
@@ -502,16 +502,17 @@ function initTheme() {
         Chart.defaults.color = '#8b949e';
     }
 }
-initTheme();
 
 function updateSyncStatus(state) {
    var el = document.getElementById('sync-status');
    if(state === 'SYNCING') {
        el.innerHTML = '<div class="spinner"></div><span style="color:var(--acc)">SYNCING</span>';
    } else if(state === 'CACHED') {
-       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED (Fetching Live...)</span>';
+       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED (Syncing Live...)</span>';
+   } else if(state === 'SEEDING') {
+       el.innerHTML = '<div class="spinner" style="border-top-color:var(--cas)"></div><span style="color:var(--cas)">LOADING SEED DATA</span>';
    } else if(state === 'LIVE') {
-       el.innerHTML = '<div class="live-dot" style="background:var(--co); animation:bk 2s infinite"></div><span style="color:var(--co)">LIVE</span>';
+       el.innerHTML = '<div class="live-dot" style="background:var(--co); animation:bk 2s infinite"></div><span style="color:var(--co)">LIVE DATA</span>';
    } else {
        el.innerHTML = '<div class="spinner"></div><span style="color:var(--cas)">' + state + '</span>';
    }
@@ -521,8 +522,7 @@ function updateSyncStatus(state) {
 var PROXIES=[
   {pfx:'https://api.allorigins.win/get?url=', enc:true, isJson:true},
   {pfx:'https://api.codetabs.com/v1/proxy?quest=', enc:false, isJson:false},
-  {pfx:'https://corsproxy.io/?url=', enc:true, isJson:false},
-  {pfx:'https://thingproxy.freeboard.io/fetch/', enc:false, isJson:false}
+  {pfx:'https://corsproxy.io/?url=', enc:true, isJson:false}
 ];
 
 var DP={
@@ -616,7 +616,7 @@ function parseTable(html, src){
   return out;
 }
 
-/* ToolsForEngineers Fallback Parser */
+/* ToolsForEngineers Fast Seed Parser */
 function parseTFE(html) {
     try {
         var doc = (new DOMParser()).parseFromString(html, 'text/html');
@@ -639,6 +639,7 @@ function parseTFE(html) {
 
                     var lat = parseFloat(cv(11)); var lon = parseFloat(cv(12));
                     out.push({
+                        sourceId: 'tfe_seed',
                         name: name, mw: mw, stage: stg,
                         licno: cv(5), issue: cv(6), validity: cv(7),
                         promoter: cv(8), address: cv(9),
@@ -689,12 +690,17 @@ function fetchSrc(src, onSuccess, onFail){
 }
 
 function fetchTFEFallback(onSuccess) {
-    var proxy = PROXIES[0]; 
-    var url = proxy.pfx + encodeURIComponent('https://hydropower.toolsforengineers.com/');
-    fetch(url).then(r=>r.json()).then(data=>{
-        var html = data.contents;
-        onSuccess(parseTFE(html)); 
-    }).catch(e=> onSuccess([]));
+    var url = 'https://corsproxy.io/?url=' + encodeURIComponent('https://hydropower.toolsforengineers.com/');
+    fetch(url).then(r=>r.text()).then(html=>{
+        var data = parseTFE(html);
+        if(data.length > 0) onSuccess(data);
+        else throw new Error("Empty TFE");
+    }).catch(e=>{
+        var url2 = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://hydropower.toolsforengineers.com/');
+        fetch(url2).then(r=>r.json()).then(data=>{
+             onSuccess(parseTFE(data.contents));
+        }).catch(err => onSuccess([]));
+    });
 }
 
 /* ══ DATA CACHING ══ */
@@ -733,8 +739,8 @@ var showMk=true, showBd=true, markerMap={};
 document.getElementById('lmk').onchange=function(){showMk=this.checked; if(showMk)mkLyr.addTo(map);else map.removeLayer(mkLyr);};
 document.getElementById('lbd').onchange=function(){showBd=this.checked; if(showBd)bdLyr.addTo(map);else map.removeLayer(bdLyr);};
 
-/* ══ BOOT (Cached approach with robust fallback) ══ */
-window.boot = function(forceRefresh){
+/* ══ BOOT LOGIC ══ */
+window.boot = function(forceLive){
   document.getElementById('btn-ref').classList.add('sp');
   updateSyncStatus('SYNCING');
   
@@ -1025,18 +1031,44 @@ window.exportCSV = function(){ var r=[['Project','MW','Stage','Province','Distri
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function deb(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
 
-bindEvs(); 
+/* ══ INITIALIZATION (Bulletproof execution on websites) ══ */
+function startApp() {
+    if(window._hydroStarted) return;
+    window._hydroStarted = true;
+    
+    initTheme();
+    bindEvs();
 
-// INSTANT LOAD EXECUTION
-loadCache();
-if(ALL.length > 0) {
-    updateSyncStatus('CACHED');
-    SRCS.forEach(function(s){STAT[s.id]='ok (cache)';});
-    renderSrcList(); updateKPIs(); applyFilters();
-    setTimeout(function(){ map.invalidateSize(); }, 200);
-    setTimeout(function(){ boot(true); }, 800); // Fetch silently after render
+    loadCache();
+    if(ALL.length > 0) {
+        // Instant visual load from local memory
+        updateSyncStatus('CACHED');
+        SRCS.forEach(function(s){STAT[s.id]='ok (cache)';});
+        renderSrcList(); updateKPIs(); applyFilters();
+        setTimeout(function(){ map.invalidateSize(); }, 200);
+        
+        // Silently fetch real updates in the background
+        setTimeout(function(){ window.boot(true); }, 500); 
+    } else {
+        // Brand new user: Fetch from single backup endpoint instantly
+        updateSyncStatus('SEEDING');
+        fetchTFEFallback(function(tfeData) {
+            if(tfeData && tfeData.length > 0) {
+                ALL = tfeData;
+                saveCache();
+                renderSrcList(); updateKPIs(); applyFilters();
+                setTimeout(function(){ map.invalidateSize(); }, 200);
+            }
+            // Move on to fetching live DoED sources
+            window.boot(true);
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
 } else {
-    boot(true);
+    startApp();
 }
 
 })();
