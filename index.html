@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
-<title>Nepal Hydropower Repository </title>
+<title>Nepal Hydro | Hydropower Data & Resources</title>
 <meta name="robots" content="index, follow">
 <meta name="description" content="Nepal hydropower data, resources and reference materials curated by Ramkrishna Mahato, Civil Engineer specializing in hydropower and infrastructure development.">
 <meta name="author" content="Ramkrishna Mahato">
@@ -23,11 +23,9 @@
   })();
 </script>
 
-<!-- Fonts & External CSS/JS -->
+<!-- Fonts & CSS -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 :root {
@@ -253,7 +251,7 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 <div id="top-progress"></div>
 
 <div id="bar">
-  <div class="bar-logo">🇳🇵 Nepal Hydropower<em>Repository</em></div>
+  <div class="bar-logo">🇳🇵 Nepal<em>Hydro</em></div>
   <div class="bar-src">DOED.GOV.NP</div>
   <div class="kpis">
     <div class="kpi ks"><div class="v" id="kv-s">—</div><div class="l">Survey</div></div>
@@ -437,6 +435,10 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
   </div>
 </div>
 
+<!-- EXTERNAL SCRIPTS AT BOTTOM FOR INSTANT LOAD -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 (function(){'use strict';
 
@@ -507,7 +509,7 @@ function updateSyncStatus(state) {
    if(state === 'SYNCING') {
        el.innerHTML = '<div class="spinner"></div><span style="color:var(--acc)">SYNCING</span>';
    } else if(state === 'CACHED') {
-       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED (Click Refresh for Live)</span>';
+       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED (Fetching Live...)</span>';
    } else if(state === 'LIVE') {
        el.innerHTML = '<div class="live-dot" style="background:var(--co); animation:bk 2s infinite"></div><span style="color:var(--co)">LIVE</span>';
    } else {
@@ -515,7 +517,7 @@ function updateSyncStatus(state) {
    }
 }
 
-/* ══ ADVANCED PROXY POOL (Handling DOED Blocks) ══ */
+/* ══ ADVANCED PROXY POOL ══ */
 var PROXIES=[
   {pfx:'https://api.allorigins.win/get?url=', enc:true, isJson:true},
   {pfx:'https://api.codetabs.com/v1/proxy?quest=', enc:false, isJson:false},
@@ -551,7 +553,7 @@ function vLat(v){return !isNaN(v)&&v>=25&&v<=32;}
 function vLon(v){return !isNaN(v)&&v>=79&&v<=90;}
 function fDec(v){return isNaN(v)?'':v.toFixed(5);}
 
-/* DOED Parser (Handles 13 & 14 col variants) */
+/* DOED Parser */
 function parseTable(html, src){
   var doc=(new DOMParser()).parseFromString(html,'text/html');
   var out=[];
@@ -616,37 +618,39 @@ function parseTable(html, src){
 
 /* ToolsForEngineers Fallback Parser */
 function parseTFE(html) {
-    var doc = (new DOMParser()).parseFromString(html, 'text/html');
-    var out =[];
-    var target = Array.from(doc.querySelectorAll('table')).find(t => t.textContent.includes('Province'));
-    if(target) {
-        target.querySelectorAll('tr').forEach(r=>{
-            var tds = r.querySelectorAll('td');
-            if(tds.length >= 13){
-                var cv = i => tds[i]?tds[i].textContent.trim():'';
-                var name = cv(0);
-                if(!name || name==='Project ▲' || name==='Project') return;
-                var mw = parseFloat(cv(1).replace(/,/g,''))||0;
-                var stageStr = cv(2).toLowerCase();
-                var stg = 'survey';
-                if(stageStr.includes('application for survey')) stg='appsurvey';
-                else if(stageStr.includes('application for construction')) stg='appconstruction';
-                else if(stageStr.includes('construction')) stg='construction';
-                else if(stageStr.includes('operational')) stg='operational';
+    try {
+        var doc = (new DOMParser()).parseFromString(html, 'text/html');
+        var out =[];
+        var target = Array.from(doc.querySelectorAll('table')).find(t => t.textContent.includes('Province'));
+        if(target) {
+            target.querySelectorAll('tr').forEach(r=>{
+                var tds = r.querySelectorAll('td');
+                if(tds.length >= 13){
+                    var cv = i => tds[i]?tds[i].textContent.trim():'';
+                    var name = cv(0);
+                    if(!name || name==='Project ▲' || name==='Project') return;
+                    var mw = parseFloat(cv(1).replace(/,/g,''))||0;
+                    var stageStr = cv(2).toLowerCase();
+                    var stg = 'survey';
+                    if(stageStr.includes('application for survey')) stg='appsurvey';
+                    else if(stageStr.includes('application for construction')) stg='appconstruction';
+                    else if(stageStr.includes('construction')) stg='construction';
+                    else if(stageStr.includes('operational')) stg='operational';
 
-                var lat = parseFloat(cv(11)); var lon = parseFloat(cv(12));
-                out.push({
-                    name: name, mw: mw, stage: stg,
-                    licno: cv(5), issue: cv(6), validity: cv(7),
-                    promoter: cv(8), address: cv(9),
-                    lat1: lat, lat2: lat, lon1: lon, lon2: lon,
-                    clat: lat, clon: lon,
-                    vdc: cv(10), district: cv(10), province: cv(3), river: cv(4)
-                });
-            }
-        });
-    }
-    return out;
+                    var lat = parseFloat(cv(11)); var lon = parseFloat(cv(12));
+                    out.push({
+                        name: name, mw: mw, stage: stg,
+                        licno: cv(5), issue: cv(6), validity: cv(7),
+                        promoter: cv(8), address: cv(9),
+                        lat1: lat, lat2: lat, lon1: lon, lon2: lon,
+                        clat: lat, clon: lon,
+                        vdc: cv(10), district: cv(10), province: cv(3), river: cv(4)
+                    });
+                }
+            });
+        }
+        return out;
+    } catch (e) { return[]; }
 }
 
 /* ══ FETCH ENGINE ══ */
@@ -685,7 +689,7 @@ function fetchSrc(src, onSuccess, onFail){
 }
 
 function fetchTFEFallback(onSuccess) {
-    var proxy = PROXIES[0]; // use reliable allorigins
+    var proxy = PROXIES[0]; 
     var url = proxy.pfx + encodeURIComponent('https://hydropower.toolsforengineers.com/');
     fetch(url).then(r=>r.json()).then(data=>{
         var html = data.contents;
@@ -695,17 +699,15 @@ function fetchTFEFallback(onSuccess) {
 
 /* ══ DATA CACHING ══ */
 var CACHE_KEY = 'nepalHydroData';
-function loadCache() { try { var d = localStorage.getItem(CACHE_KEY); if (d) { ALL = JSON.parse(d); } } catch(e) {} }
-function saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(ALL)); } catch(e) {} }
-
-/* ══ STATE ══ */
 var ALL=[], FILT=[], SON={survey:1,appsurvey:1,construction:1,appconstruction:1,operational:1};
 var PROV='all', MWMIN=0, MWMAX=Infinity, SCOL='mw', SDIR='desc', SEL=null, STAT={};
 var cInstances={ pie:null, barMW:null, barDist:null };
 var freshData = {};
 
-/* ══ MAP (with maxZoom Fix) ══ */
-// maxZoom is explicitly set to 24 on the L.map container allowing infinite scaling
+function loadCache() { try { var d = localStorage.getItem(CACHE_KEY); if (d) { ALL = JSON.parse(d); } } catch(e) {} }
+function saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(ALL)); } catch(e) {} }
+
+/* ══ MAP (with maxZoom Fix & Commercial CDN to avoid 403 block) ══ */
 var map=L.map('map',{center:[28.2,84.1], zoom:7, zoomControl:false, maxZoom:24});
 L.control.zoom({ position: 'topleft' }).addTo(map);
 
@@ -733,16 +735,6 @@ document.getElementById('lbd').onchange=function(){showBd=this.checked; if(showB
 
 /* ══ BOOT (Cached approach with robust fallback) ══ */
 window.boot = function(forceRefresh){
-  if(!forceRefresh) {
-      loadCache();
-      if(ALL.length > 0) {
-          updateSyncStatus('CACHED');
-          SRCS.forEach(function(s){STAT[s.id]='ok (cache)';});
-          renderSrcList(); updateKPIs(); applyFilters();
-          return;
-      }
-  }
-
   document.getElementById('btn-ref').classList.add('sp');
   updateSyncStatus('SYNCING');
   
@@ -1033,7 +1025,20 @@ window.exportCSV = function(){ var r=[['Project','MW','Stage','Province','Distri
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function deb(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
 
-bindEvs(); boot(false);
+bindEvs(); 
+
+// INSTANT LOAD EXECUTION
+loadCache();
+if(ALL.length > 0) {
+    updateSyncStatus('CACHED');
+    SRCS.forEach(function(s){STAT[s.id]='ok (cache)';});
+    renderSrcList(); updateKPIs(); applyFilters();
+    setTimeout(function(){ map.invalidateSize(); }, 200);
+    setTimeout(function(){ boot(true); }, 800); // Fetch silently after render
+} else {
+    boot(true);
+}
+
 })();
 </script>
 </body>
