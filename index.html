@@ -439,639 +439,101 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-(function(){'use strict';
-
-/* ══ CONFIG ══ */
-var SCFG={
-  survey:         {label:'Survey License',    color:'#f0883e', tcls:'tg-s'},
-  appsurvey:      {label:'App. Survey',       color:'#e3b341', tcls:'tg-as'},
-  construction:   {label:'Construction',      color:'#a78bfa', tcls:'tg-c'},
-  appconstruction:{label:'App. Construction', color:'#c084fc', tcls:'tg-ac'},
-  operational:    {label:'Operational',       color:'#4ade80', tcls:'tg-o'}
-};
-
-var SRCS=[
-  {id:'s1', label:'Survey >1MW',       url:'https://doed.gov.np/pages/hydromorethan1/',       stg:'survey'},
-  {id:'s2', label:'Survey <1MW',       url:'https://doed.gov.np/pages/hydrolessthan1/',       stg:'survey'},
-  {id:'as1',label:'App.Survey >1MW',   url:'https://doed.gov.np/pages/appslhydromorethan1/',  stg:'appsurvey'},
-  {id:'as2',label:'App.Survey <1MW',   url:'https://doed.gov.np/pages/appslhydrolessthan1/',  stg:'appsurvey'},
-  {id:'c1', label:'Construction >1MW', url:'https://doed.gov.np/pages/clhydromorethan1/',     stg:'construction'},
-  {id:'c2', label:'Construction <1MW', url:'https://doed.gov.np/pages/clhydrolessthan1/',     stg:'construction'},
-  {id:'ac1',label:'App.Constr.(all)',  url:'https://doed.gov.np/pages/appclhydro/',           stg:'appconstruction'},
-  {id:'o1', label:'Power Plants >1MW', url:'https://doed.gov.np/pages/powerplantsmorethan1/', stg:'operational'},
-  {id:'o2', label:'Power Plants <1MW', url:'https://doed.gov.np/pages/powerplantslessthan1/', stg:'operational'}
-];
-
-/* ══ THEME HANDLING ══ */
-var gridConfig = { color: 'rgba(255, 255, 255, 0.05)', tickColor: 'transparent' };
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(13, 17, 23, 0.9)';
-Chart.defaults.plugins.tooltip.borderColor = '#30363d';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.legend.labels.usePointStyle = true;
-Chart.defaults.plugins.legend.labels.boxWidth = 8;
-
-window.toggleTheme = function() {
-    var root = document.documentElement;
-    if(root.getAttribute('data-theme') === 'light') {
-        root.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'dark');
-        document.getElementById('btn-theme').textContent = '☀️ Light';
-        Chart.defaults.color = '#8b949e';
-        gridConfig.color = 'rgba(255, 255, 255, 0.05)';
-    } else {
-        root.setAttribute('data-theme', 'light');
-        localStorage.setItem('theme', 'light');
-        document.getElementById('btn-theme').textContent = '🌙 Dark';
-        Chart.defaults.color = '#57606a';
-        gridConfig.color = 'rgba(0, 0, 0, 0.05)';
-    }
-    if(cInstances.pie) { cInstances.pie.options.plugins.legend.labels.color = Chart.defaults.color; cInstances.pie.update(); }
-    if(cInstances.barMW) { cInstances.barMW.options.scales.x.ticks.color = Chart.defaults.color; cInstances.barMW.options.scales.y.ticks.color = Chart.defaults.color; cInstances.barMW.options.scales.y.grid.color = gridConfig.color; cInstances.barMW.update(); }
-    if(cInstances.barDist) { cInstances.barDist.options.scales.x.ticks.color = Chart.defaults.color; cInstances.barDist.options.scales.y.ticks.color = Chart.defaults.color; cInstances.barDist.options.scales.y.grid.color = gridConfig.color; cInstances.barDist.update(); }
-};
-
-function initTheme() {
-    if (localStorage.getItem('theme') === 'light') {
-        document.getElementById('btn-theme').textContent = '🌙 Dark';
-        Chart.defaults.color = '#57606a';
-        gridConfig.color = 'rgba(0, 0, 0, 0.05)';
-    } else {
-        document.getElementById('btn-theme').textContent = '☀️ Light';
-        Chart.defaults.color = '#8b949e';
-    }
-}
-
-function updateSyncStatus(state) {
-   var el = document.getElementById('sync-status');
-   if(state === 'SYNCING') {
-       el.innerHTML = '<div class="spinner"></div><span style="color:var(--acc)">SYNCING</span>';
-   } else if(state === 'CACHED') {
-       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED (Syncing Live...)</span>';
-   } else if(state === 'SEEDING') {
-       el.innerHTML = '<div class="spinner" style="border-top-color:var(--cas)"></div><span style="color:var(--cas)">LOADING SEED DATA</span>';
-   } else if(state === 'LIVE') {
-       el.innerHTML = '<div class="live-dot" style="background:var(--co); animation:bk 2s infinite"></div><span style="color:var(--co)">LIVE DATA</span>';
-   } else {
-       el.innerHTML = '<div class="spinner"></div><span style="color:var(--cas)">' + state + '</span>';
-   }
-}
-
-/* ══ ADVANCED PROXY POOL ══ */
-var PROXIES=[
-  {pfx:'https://api.allorigins.win/get?url=', enc:true, isJson:true},
-  {pfx:'https://api.codetabs.com/v1/proxy?quest=', enc:false, isJson:false},
-  {pfx:'https://corsproxy.io/?url=', enc:true, isJson:false}
-];
-
-var DP={
-  TAPLEJUNG:'Koshi',PANCHTHAR:'Koshi',ILAM:'Koshi',JHAPA:'Koshi',MORANG:'Koshi',SUNSARI:'Koshi',DHANKUTA:'Koshi',TERHATHUM:'Koshi',BHOJPUR:'Koshi',SOLUKHUMBU:'Koshi',OKHALDHUNGA:'Koshi',KHOTANG:'Koshi',UDAYAPUR:'Koshi',SANKHUWASABHA:'Koshi',
-  SAPTARI:'Madhesh',SIRAHA:'Madhesh',DHANUSA:'Madhesh',MAHOTTARI:'Madhesh',SARLAHI:'Madhesh',RAUTAHAT:'Madhesh',BARA:'Madhesh',PARSA:'Madhesh',
-  SINDHULI:'Bagmati',RAMECHHAP:'Bagmati',DOLAKHA:'Bagmati',SINDHUPALCHOK:'Bagmati',KAVREPALANCHOK:'Bagmati',KABHREPALANCHOK:'Bagmati',LALITPUR:'Bagmati',BHAKTAPUR:'Bagmati',KATHMANDU:'Bagmati',NUWAKOT:'Bagmati',RASUWA:'Bagmati',DHADING:'Bagmati',MAKWANPUR:'Bagmati',MAKAWANPUR:'Bagmati',CHITWAN:'Bagmati',CHITAWAN:'Bagmati',
-  GORKHA:'Gandaki',LAMJUNG:'Gandaki',TANAHU:'Gandaki',SYANGJA:'Gandaki',KASKI:'Gandaki',MANANG:'Gandaki',MUSTANG:'Gandaki',MYAGDI:'Gandaki',PARBAT:'Gandaki',NAWALPARASI:'Gandaki',BAGLUNG:'Gandaki',NAWALPUR:'Gandaki',
-  RUPANDEHI:'Lumbini',KAPILBASTU:'Lumbini',ARGHAKHANCHI:'Lumbini',PALPA:'Lumbini',GULMI:'Lumbini',PYUTHAN:'Lumbini',ROLPA:'Lumbini',RUKUM:'Lumbini',DANG:'Lumbini',BANKE:'Lumbini',BARDIYA:'Lumbini',
-  SURKHET:'Karnali',DAILEKH:'Karnali',JAJARKOT:'Karnali',DOLPA:'Karnali',JUMLA:'Karnali',KALIKOT:'Karnali',MUGU:'Karnali',SALYAN:'Karnali',HUMLA:'Karnali',
-  BAJURA:'Sudurpaschim',BAJHANG:'Sudurpaschim',ACHHAM:'Sudurpaschim',DOTI:'Sudurpaschim',KAILALI:'Sudurpaschim',KANCHANPUR:'Sudurpaschim',DADELDHURA:'Sudurpaschim',BAITADI:'Sudurpaschim',DARCHULA:'Sudurpaschim'
-};
-
-function getProv(raw){
-  if(!raw) return '—';
-  var up=raw.toUpperCase();
-  for(var k in DP){ if(up.indexOf(k)!==-1) return DP[k]; }
-  return '—';
-}
-
-function dms2dec(s){
-  if(!s) return NaN;
-  s=String(s).trim().replace(/°/g,'o').replace(/[''′`]/g,"'").replace(/[""″]/g,'"');
-  var m=s.match(/^(\d{1,3}(?:\.\d+)?)\s*o\s*(?:(\d{1,2}(?:\.\d+)?)\s*'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*"?)?)?/i);
-  if(!m) return NaN;
-  return (+m[1]||0) + (+m[2]||0)/60 + (+m[3]||0)/3600;
-}
-function vLat(v){return !isNaN(v)&&v>=25&&v<=32;}
-function vLon(v){return !isNaN(v)&&v>=79&&v<=90;}
-function fDec(v){return isNaN(v)?'':v.toFixed(5);}
-
-/* DOED Parser */
-function parseTable(html, src){
-  var doc=(new DOMParser()).parseFromString(html,'text/html');
-  var out=[];
-  doc.querySelectorAll('table').forEach(function(tbl){
-    var rows=Array.from(tbl.querySelectorAll('tr'));
-    var dataStart=-1;
-    for(var i=0;i<rows.length&&i<20;i++){
-      if(rows[i].querySelectorAll('td').length>=13){ dataStart=i; break; }
-    }
-    if(dataStart<0) return;
-
-    rows.slice(dataStart).forEach(function(r){
-      var cells=Array.from(r.querySelectorAll('td'));
-      if(cells.length<13) return;
-      var cv=function(i){ return cells[i]?cells[i].textContent.trim().replace(/\s+/g, ' '):''; };
-
-      var name=cv(1);
-      if(!name||name.length<2||/total|जम्मा|grand/i.test(name)) return;
-      var mw=parseFloat(cv(2).replace(/,/g,''))||0;
-      
-      var licno, issue, validity, promoter, address, lat1, lat2, lon1, lon2, vdcRaw;
-
-      // Apps (13 cols) vs License (14+ cols)
-      if(cells.length === 13) {
-        licno = cv(4); issue = cv(5); validity = '—';
-        promoter = cv(6); address = cv(7);
-        lat1 = dms2dec(cv(8)); lat2 = dms2dec(cv(9));
-        lon1 = dms2dec(cv(10)); lon2 = dms2dec(cv(11));
-        vdcRaw = cv(12);
-      } else {
-        licno = cv(4); issue = cv(5); validity = cv(6);
-        promoter = cv(7); address = cv(8);
-        lat1 = dms2dec(cv(9)); lat2 = dms2dec(cv(10));
-        lon1 = dms2dec(cv(11)); lon2 = dms2dec(cv(12));
-        vdcRaw = cv(13);
-      }
-
-      if(!vLat(lat1)) lat1=NaN; if(!vLat(lat2)) lat2=NaN;
-      if(!vLon(lon1)) lon1=NaN; if(!vLon(lon2)) lon2=NaN;
-
-      var clat=NaN, clon=NaN;
-      if(!isNaN(lat1)&&!isNaN(lat2)) clat=(lat1+lat2)/2; else if(!isNaN(lat1)) clat=lat1;
-      if(!isNaN(lon1)&&!isNaN(lon2)) clon=(lon1+lon2)/2; else if(!isNaN(lon1)) clon=lon1;
-
-      var province=getProv(vdcRaw);
-      var dMatch=vdcRaw.match(/\(([^)]+)\)/);
-      var district=dMatch?dMatch[1].trim():'—';
-      var allDists=[], re=/\(([^)]+)\)/g, mm;
-      while((mm=re.exec(vdcRaw))!==null){ var d=mm[1].trim(); if(d&&allDists.indexOf(d)<0) allDists.push(d); }
-      if(allDists.length) district=allDists.join(', ');
-
-      out.push({
-        sourceId:src.id, name:name, mw:mw, stage:src.stg, licno:licno, issue:issue, validity:validity,
-        promoter:promoter, address:address, lat1:lat1, lat2:lat2, lon1:lon1, lon2:lon2,
-        clat:clat, clon:clon, vdc:vdcRaw, district:district, province:province, river:cv(3)
-      });
-    });
-  });
-  if(out.length === 0) throw new Error("Empty Table");
-  return out;
-}
-
-/* ToolsForEngineers Fast Seed Parser */
-function parseTFE(html) {
-    try {
-        var doc = (new DOMParser()).parseFromString(html, 'text/html');
-        var out =[];
-        var target = Array.from(doc.querySelectorAll('table')).find(t => t.textContent.includes('Province'));
-        if(target) {
-            target.querySelectorAll('tr').forEach(r=>{
-                var tds = r.querySelectorAll('td');
-                if(tds.length >= 13){
-                    var cv = i => tds[i]?tds[i].textContent.trim():'';
-                    var name = cv(0);
-                    if(!name || name==='Project ▲' || name==='Project') return;
-                    var mw = parseFloat(cv(1).replace(/,/g,''))||0;
-                    var stageStr = cv(2).toLowerCase();
-                    var stg = 'survey';
-                    if(stageStr.includes('application for survey')) stg='appsurvey';
-                    else if(stageStr.includes('application for construction')) stg='appconstruction';
-                    else if(stageStr.includes('construction')) stg='construction';
-                    else if(stageStr.includes('operational')) stg='operational';
-
-                    var lat = parseFloat(cv(11)); var lon = parseFloat(cv(12));
-                    out.push({
-                        sourceId: 'tfe_seed',
-                        name: name, mw: mw, stage: stg,
-                        licno: cv(5), issue: cv(6), validity: cv(7),
-                        promoter: cv(8), address: cv(9),
-                        lat1: lat, lat2: lat, lon1: lon, lon2: lon,
-                        clat: lat, clon: lon,
-                        vdc: cv(10), district: cv(10), province: cv(3), river: cv(4)
-                    });
-                }
-            });
-        }
-        return out;
-    } catch (e) { return[]; }
-}
-
-/* ══ FETCH ENGINE ══ */
-var _proxyOffset=0;
-function fetchSrc(src, onSuccess, onFail){
-  var startProxy = (_proxyOffset++) % PROXIES.length;
-  var tried=0, maxTries = PROXIES.length * 2; 
-
-  function attempt(rawIdx){
-    if(tried >= maxTries){ onFail(); return; }
-    tried++;
-    var proxy = PROXIES[rawIdx % PROXIES.length];
-    var fullUrl = proxy.pfx + (proxy.enc ? encodeURIComponent(src.url) : src.url);
-    var ab = new AbortController(), timer = setTimeout(function(){ ab.abort(); attempt(rawIdx+1); }, 15000);
-
-    fetch(fullUrl, {signal:ab.signal})
-      .then(function(r){ 
-          if(!r.ok) throw new Error(); 
-          return proxy.isJson ? r.json() : r.text(); 
-      })
-      .then(function(data){
-        clearTimeout(timer);
-        var html = proxy.isJson ? data.contents : data;
-        if(!html || typeof html !== 'string') throw new Error("Empty Response");
-        if(html.trim().charAt(0)==='{'){ try{ var j=JSON.parse(html); if(j.contents) html=j.contents; }catch(e){} }
-        
-        var lowerHtml = html.toLowerCase();
-        if(!lowerHtml.includes('department of electricity development') && !lowerHtml.includes('doed')) throw new Error("Proxy Block");
-        
-        var ps=parseTable(html, src);
-        onSuccess(ps);
-      })
-      .catch(function(){ clearTimeout(timer); attempt(rawIdx+1); });
-  }
-  attempt(startProxy);
-}
-
-function fetchTFEFallback(onSuccess) {
-    var url = 'https://corsproxy.io/?url=' + encodeURIComponent('https://hydropower.toolsforengineers.com/');
-    fetch(url).then(r=>r.text()).then(html=>{
-        var data = parseTFE(html);
-        if(data.length > 0) onSuccess(data);
-        else throw new Error("Empty TFE");
-    }).catch(e=>{
-        var url2 = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://hydropower.toolsforengineers.com/');
-        fetch(url2).then(r=>r.json()).then(data=>{
-             onSuccess(parseTFE(data.contents));
-        }).catch(err => onSuccess([]));
-    });
-}
-
-/* ══ DATA CACHING ══ */
-var CACHE_KEY = 'nepalHydroData';
+  <script>
+/* ═══════════════════════════════════════════════════════════
+   DATA LOADING — Simple fetch from same-origin data.json
+   ═══════════════════════════════════════════════════════════ */
+var CACHE_KEY = 'nepalHydroData_v3';
+var DATA_URL = './data.json';   // served from same GitHub Pages origin
 var ALL=[], FILT=[], SON={survey:1,appsurvey:1,construction:1,appconstruction:1,operational:1};
 var PROV='all', MWMIN=0, MWMAX=Infinity, SCOL='mw', SDIR='desc', SEL=null, STAT={};
 var cInstances={ pie:null, barMW:null, barDist:null };
-var freshData = {};
 
-function loadCache() { try { var d = localStorage.getItem(CACHE_KEY); if (d) { ALL = JSON.parse(d); } } catch(e) {} }
-function saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(ALL)); } catch(e) {} }
+function loadCache() { try { const d = localStorage.getItem(CACHE_KEY); if (d) ALL = JSON.parse(d).projects || []; } catch(e){} }
+function saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ projects: ALL, cached: Date.now() })); } catch(e){} }
 
-/* ══ MAP (with maxZoom Fix & Commercial CDN to avoid 403 block) ══ */
-var map=L.map('map',{center:[28.2,84.1], zoom:7, zoomControl:false, maxZoom:24});
-L.control.zoom({ position: 'topleft' }).addTo(map);
-
-var TILES={
-  osm: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:24, maxNativeZoom:19, attribution:'© OpenStreetMap © CARTO'}),
-  topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:24, maxNativeZoom:18, attribution:'© Esri'}),
-  esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:24, maxNativeZoom:18, attribution:'© Esri'}),
-  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:24, maxNativeZoom:19, attribution:'© CARTO'})
-};
-var curBase='osm'; TILES.osm.addTo(map);
-
-document.querySelectorAll('.bb').forEach(function(b){
-  b.addEventListener('click',function(){
-    document.querySelectorAll('.bb').forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on'); map.removeLayer(TILES[curBase]);
-    curBase=b.dataset.base; TILES[curBase].addTo(map);
-  });
-});
-
-var mkLyr=L.layerGroup().addTo(map), bdLyr=L.layerGroup().addTo(map);
-var showMk=true, showBd=true, markerMap={};
-
-document.getElementById('lmk').onchange=function(){showMk=this.checked; if(showMk)mkLyr.addTo(map);else map.removeLayer(mkLyr);};
-document.getElementById('lbd').onchange=function(){showBd=this.checked; if(showBd)bdLyr.addTo(map);else map.removeLayer(bdLyr);};
-
-/* ══ BOOT LOGIC ══ */
 window.boot = function(forceLive){
   document.getElementById('btn-ref').classList.add('sp');
   updateSyncStatus('SYNCING');
-  
-  var pbar = document.getElementById('top-progress');
+
+  const pbar = document.getElementById('top-progress');
   pbar.style.transition = 'none'; pbar.style.width = '0%'; pbar.style.opacity = '1';
-  setTimeout(() => { pbar.style.transition = 'width 0.3s ease, opacity 0.3s ease'; pbar.style.width = '5%'; }, 50);
+  setTimeout(function(){ pbar.style.transition = 'width 0.3s ease, opacity 0.3s ease'; pbar.style.width = '30%'; }, 50);
 
-  freshData = {};
-  var done = 0, n = SRCS.length;
-  SRCS.forEach(function(s){STAT[s.id]='ld';});
-  renderSrcList();
-  
-  SRCS.forEach(function(src){
-    fetchSrc(src, function(ps){
-      freshData[src.id] = ps; STAT[src.id]='ok';
-      onSrcDone();
-    }, function(){
-      STAT[src.id]='fail';
-      onSrcDone();
-    });
-  });
+  // Bust GitHub Pages CDN cache with a timestamp query
+  const url = DATA_URL + '?t=' + Date.now();
 
-  function onSrcDone(){
-    done++;
-    pbar.style.width = Math.round((done/n)*100) + '%';
-    
-    if(done === n) {
-      var hasFails = SRCS.some(s => STAT[s.id] === 'fail');
-      if(hasFails) {
-          updateSyncStatus('FETCHING FALLBACK...');
-          fetchTFEFallback(function(tfeData) { finalizeData(tfeData); });
+  fetch(url, { cache: 'no-store' })
+    .then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(payload){
+      pbar.style.width = '100%';
+      const projects = Array.isArray(payload) ? payload : (payload.projects || []);
+
+      if (projects.length === 0 && ALL.length > 0) {
+        console.warn('data.json empty — keeping cached data');
+        updateSyncStatus('LIVE');
       } else {
-          finalizeData([]);
+        ALL = projects;
+        saveCache();
+        updateSyncStatus('LIVE');
+        SRCS.forEach(function(s){ STAT[s.id] = 'ok'; });
       }
-    }
-  }
 
-  function finalizeData(tfeData) {
-    var newAll =[], seen = {};
-    function addItems(items, sid) {
-      items.forEach(function(p){
-        var k = (p.name||'').trim().toLowerCase() + '|' + p.stage;
-        if(!seen[k]){ if(sid) p.sourceId = sid; newAll.push(p); seen[k]=true; }
-      });
-    }
-    
-    SRCS.forEach(function(s){
-       if (STAT[s.id] === 'ok' && freshData[s.id]) { 
-           addItems(freshData[s.id], s.id); 
-       } else { 
-           var tfeMatches = tfeData.filter(p => p.stage === s.stg);
-           if(tfeMatches.length > 0) {
-               addItems(tfeMatches, s.id);
-               STAT[s.id] = 'ok (fallback)';
-           } else {
-               var cachedItems = ALL.filter(function(x){ return x.sourceId === s.id; });
-               if (cachedItems.length > 0) {
-                   addItems(cachedItems, s.id);
-                   STAT[s.id] = 'ok (cache)';
-               }
-           }
-       }
+      if (payload.updated) {
+        const d = new Date(payload.updated);
+        document.getElementById('ts').textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      } else {
+        document.getElementById('ts').textContent = new Date().toLocaleString();
+      }
+
+      renderSrcList(); updateKPIs(); applyFilters();
+
+      setTimeout(function(){
+        pbar.style.opacity = '0';
+        document.getElementById('btn-ref').classList.remove('sp');
+        setTimeout(function(){ pbar.style.width = '0%'; }, 300);
+      }, 400);
+    })
+    .catch(function(err){
+      console.error('Failed to load data.json:', err);
+      pbar.style.width = '100%'; pbar.style.opacity = '0';
+      document.getElementById('btn-ref').classList.remove('sp');
+      updateSyncStatus(ALL.length ? 'CACHED' : 'OFFLINE');
+      if (ALL.length === 0) {
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="15" style="text-align:center; padding:40px; color:#f85149;">⚠ Could not load data.json. Check that the GitHub Action has run successfully.</td></tr>';
+      }
     });
-    
-    ALL = newAll; saveCache();
-    var now = new Date();
-    document.getElementById('ts').textContent = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    updateSyncStatus('LIVE');
-    renderSrcList(); updateKPIs(); applyFilters();
-    
-    setTimeout(function(){ 
-       pbar.style.opacity = '0'; 
-       document.getElementById('btn-ref').classList.remove('sp'); 
-       setTimeout(function(){ pbar.style.width = '0%'; }, 300);
-    }, 500);
-  }
 };
 
-function renderSrcList(){
-  document.getElementById('srcl').innerHTML=SRCS.map(function(s){
-    var st=STAT[s.id]||'pend', isOk=st.startsWith('ok');
-    
-    var col = '#f85149'; 
-    var lbl = '✗ Failed';
-    if(st === 'ok') { col = 'var(--co)'; lbl = '✓ Live'; }
-    else if(st === 'ok (fallback)') { col = 'var(--cas)'; lbl = '⚡ Fallback'; }
-    else if(st === 'ok (cache)') { col = 'var(--acc)'; lbl = '💾 Cache'; }
-    else if(st === 'ld') { col = 'var(--acc)'; lbl = '… Syncing'; }
+/* INIT */
+function startApp(){
+  if (window._hydroStarted) return;
+  window._hydroStarted = true;
+  initTheme();
+  bindEvs();
+  loadCache();
 
-    return '<div class="sri"><div class="sdot2" style="background:'+col+'"></div><a href="'+s.url+'" target="_blank">'+esc(s.label)+'</a><span class="sst" style="color:'+col+'">'+lbl+'</span></div>';
-  }).join('');
-}
-
-function updateKPIs(){
-  var c={survey:0,appsurvey:0,construction:0,appconstruction:0,operational:0};
-  ALL.forEach(function(p){if(c[p.stage]!==undefined)c[p.stage]++;});
-  document.getElementById('kv-s').textContent=c.survey; document.getElementById('cn-s').textContent=c.survey;
-  document.getElementById('kv-as').textContent=c.appsurvey; document.getElementById('cn-as').textContent=c.appsurvey;
-  document.getElementById('kv-c').textContent=c.construction; document.getElementById('cn-c').textContent=c.construction;
-  document.getElementById('kv-ac').textContent=c.appconstruction; document.getElementById('cn-ac').textContent=c.appconstruction;
-  document.getElementById('kv-o').textContent=c.operational; document.getElementById('cn-o').textContent=c.operational;
-  document.getElementById('kv-t').textContent=ALL.length;
-}
-
-/* ══ FILTER & RENDER ══ */
-function applyFilters(){
-  var q=(document.getElementById('fq').value||'').toLowerCase().trim();
-  FILT=ALL.filter(function(p){
-    if(!SON[p.stage]) return false;
-    if(PROV!=='all'&&p.province!==PROV) return false;
-    if(p.mw<MWMIN||p.mw>MWMAX) return false;
-    if(q&&!(p.name||'').toLowerCase().includes(q)&&!(p.district||'').toLowerCase().includes(q)&&!(p.vdc||'').toLowerCase().includes(q)&&!(p.river||'').toLowerCase().includes(q)) return false;
-    return true;
-  });
-  var tmw=FILT.reduce(function(a,p){return a+p.mw;},0);
-  document.getElementById('t-sn').textContent=FILT.length.toLocaleString();
-  document.getElementById('t-to').textContent=ALL.length.toLocaleString();
-  document.getElementById('t-mw').textContent=Math.round(tmw).toLocaleString()+' MW';
-  
-  renderTable(); renderMap(); renderCharts();
-}
-
-function renderTable(){
-  var tb = document.getElementById('tbody');
-  
-  if (FILT.length === 0) {
-    var isSyncing = Object.values(STAT).some(s => s === 'ld' || s === 'pend');
-    var msg = isSyncing ? 'Syncing live data... Please wait.' : 'No projects found matching the criteria.';
-    tb.innerHTML = '<tr><td colspan="15" style="text-align:center; padding: 40px; font-style: italic; color: var(--t3);">'+msg+'</td></tr>';
-    return;
+  if (ALL.length > 0) {
+    // Instant load from cache, then refresh in background
+    updateSyncStatus('CACHED');
+    SRCS.forEach(function(s){ STAT[s.id] = 'ok (cache)'; });
+    renderSrcList(); updateKPIs(); applyFilters();
+    setTimeout(function(){ map.invalidateSize(); }, 200);
+    setTimeout(function(){ window.boot(true); }, 400);
+  } else {
+    updateSyncStatus('SEEDING');
+    window.boot(true);
   }
-
-  var data=FILT.slice().sort(function(a,b){
-    var av=a[SCOL], bv=b[SCOL];
-    if(SCOL==='name'||SCOL==='stage'||SCOL==='river'||SCOL==='district') { av=String(av||'').toLowerCase(); bv=String(bv||'').toLowerCase(); }
-    if(av<bv) return SDIR==='asc'?-1:1;
-    if(av>bv) return SDIR==='asc'?1:-1;
-    return 0;
-  });
-
-  var html = '';
-  for(var i=0; i<data.length; i++){
-    var p = data[i], cfg = SCFG[p.stage], key = p.name+'|'+p.stage;
-    var isSel = SEL && SEL.name===p.name && SEL.stage===p.stage;
-    
-    html += '<tr data-key="'+esc(key)+'" class="'+(isSel?'sel':'')+'">'+
-      '<td class="nm" title="'+esc(p.name)+'">'+esc(p.name)+'</td>'+
-      '<td class="mwcol">'+(p.mw?p.mw.toFixed(2):'—')+'</td>'+
-      '<td><span class="tag '+cfg.tcls+'">'+cfg.label+'</span></td>'+
-      '<td style="font-family:var(--fd);font-size:.65rem" title="'+esc(p.licno||'')+'">'+esc(p.licno||'—')+'</td>'+
-      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.issue||'—')+'</td>'+
-      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.validity||'—')+'</td>'+
-      '<td title="'+esc(p.river||'')+'">'+esc(p.river||'—')+'</td>'+
-      '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis" title="'+esc(p.promoter||'')+'">'+esc(p.promoter||'—')+'</td>'+
-      '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-size:.67rem" title="'+esc(p.address||'')+'">'+esc(p.address||'—')+'</td>'+
-      '<td class="coord">'+(isNaN(p.lat1)?'—':p.lat1.toFixed(5))+'</td>'+
-      '<td class="coord">'+(isNaN(p.lat2)?'—':p.lat2.toFixed(5))+'</td>'+
-      '<td class="coord">'+(isNaN(p.lon1)?'—':p.lon1.toFixed(5))+'</td>'+
-      '<td class="coord">'+(isNaN(p.lon2)?'—':p.lon2.toFixed(5))+'</td>'+
-      '<td class="vdc" title="'+esc(p.vdc||'')+'">'+esc(p.vdc||'—')+'</td>'+
-      '<td>'+esc(p.province||'—')+'</td></tr>';
-  }
-  tb.innerHTML = html;
-}
-
-document.getElementById('tbody').addEventListener('click', function(e){
-  var tr = e.target.closest('tr');
-  if(!tr) return;
-  var key = tr.dataset.key;
-  var p = FILT.find(function(x){ return (x.name+'|'+x.stage) === key; });
-  if(p) selectProj(p);
-});
-
-function renderMap(){
-  mkLyr.clearLayers(); bdLyr.clearLayers(); markerMap={};
-  FILT.forEach(function(p){
-    var cfg=SCFG[p.stage]; if(!cfg) return;
-    var isSel=SEL&&SEL.name===p.name&&SEL.stage===p.stage;
-
-    // Enhanced Boundary
-    if(showBd&&!isNaN(p.lat1)&&!isNaN(p.lat2)&&!isNaN(p.lon1)&&!isNaN(p.lon2)){
-      var sLat=Math.min(p.lat1,p.lat2),nLat=Math.max(p.lat1,p.lat2), wLon=Math.min(p.lon1,p.lon2),eLon=Math.max(p.lon1,p.lon2);
-      if(nLat-sLat<5&&eLon-wLon<5){
-        var rect=L.rectangle([[sLat,wLon],[nLat,eLon]],{ 
-            color: cfg.color, weight: isSel ? 3 : 2, opacity: isSel ? 1 : 0.85, 
-            fillColor: cfg.color, fillOpacity: isSel ? 0.25 : 0.15, dashArray: '4,4' 
-        });
-        rect.on('click',function(e){L.DomEvent.stopPropagation(e);selectProj(p);});
-        rect.bindTooltip('<b>'+esc(p.name)+'</b><br/>'+cfg.label+(p.mw?' · '+p.mw.toFixed(2)+' MW':'')); bdLyr.addLayer(rect);
-      }
-    }
-    
-    // Scaled Marker - smaller radius scaling factor
-    if(showMk&&!isNaN(p.clat)&&!isNaN(p.clon)){
-      var baseR = Math.max(3, Math.min(9, 3 + Math.sqrt(p.mw || 0) * 0.4)); // Scaled down globally
-      var mk=L.circleMarker([p.clat,p.clon],{ 
-          radius: isSel ? baseR + 4 : baseR, 
-          color: isSel ? '#ffffff' : cfg.color, weight: isSel ? 2.5 : 1, 
-          fillColor: cfg.color, fillOpacity: isSel ? 1 : 0.8, zIndexOffset: isSel ? 1000 : 0 
-      });
-      mk.bindPopup('<div style="min-width:195px"><b>'+esc(p.name)+'</b><br/><span style="color:'+cfg.color+';font-size:.6rem;font-weight:700">'+cfg.label+'</span><div style="margin-top:6px;font-size:.72rem;color:var(--t2)">'+(p.mw?'<b style="color:var(--t1)">'+p.mw.toFixed(2)+' MW</b><br/>':'')+(p.district!=='—'?'📍 '+esc(p.district)+'<br/>':'')+(!isNaN(p.clat)?'🌐 '+p.clat.toFixed(4)+'°N, '+p.clon.toFixed(4)+'°E':'')+'</div></div>');
-      mk.on('click',function(e){L.DomEvent.stopPropagation(e);selectProj(p);});
-      markerMap[p.name+'|'+p.stage]=mk; mkLyr.addLayer(mk);
-    }
-  });
-}
-
-function selectProj(p){
-  SEL=p; renderMap();
-  if(!isNaN(p.clat)&&!isNaN(p.clon)){
-    map.setView([p.clat,p.clon],12,{animate:true});
-    var mk=markerMap[p.name+'|'+p.stage]; if(mk) setTimeout(function(){mk.openPopup();},300);
-  }
-  document.querySelectorAll('#tbody tr').forEach(function(r){
-    if(r.dataset.key===(p.name+'|'+p.stage)){ r.classList.add('sel'); r.scrollIntoView({behavior:'smooth',block:'nearest'}); } else { r.classList.remove('sel'); }
-  });
-  renderDetail(p);
-  document.getElementById('map-sb').textContent=p.name+' · '+(SCFG[p.stage]?SCFG[p.stage].label:'')+(p.mw?' · '+p.mw.toFixed(2)+' MW':'');
-}
-
-function renderDetail(p){
-  var cfg=SCFG[p.stage], html='<div class="det-head"><div class="det-name">'+esc(p.name)+'</div><span class="det-tag" style="background:rgba(255,255,255,.07);color:'+cfg.color+'">'+cfg.label+'</span></div><div class="det-sect">Project Details</div><table class="det-table">';
-  var row=function(l,v,c){return '<tr><th>'+esc(l)+'</th><td'+(c?' class="'+c+'"':'')+'>'+esc(String(v||'—'))+'</td></tr>';};
-  html+=row('Capacity (MW)', p.mw?p.mw.toFixed(3)+' MW':'—', 'big')+row('Stage', cfg.label)+row('River', p.river)+row('District', p.district)+row('Province', p.province)+row('Promoter', p.promoter)+row('Lic / App No', p.licno)+row('Issue Date', p.issue)+row('Validity', p.validity)+row('Address', p.address)+'</table>';
-  if(!isNaN(p.clat)) html+='<a class="det-gmaps" href="https://maps.google.com/?q='+p.clat+','+p.clon+'" target="_blank">⊕ Open centre in Google Maps ↗</a>';
-  document.getElementById('det').innerHTML=html;
-}
-
-/* ══ CHARTS ══ */
-function renderCharts() {
-  var sc={}, mwc={}, dm={};
-  Object.keys(SCFG).forEach(k => { sc[k]=0; mwc[k]=0; });
-  
-  FILT.forEach(function(p){ 
-    if(sc[p.stage]!==undefined){ sc[p.stage]++; mwc[p.stage]+=p.mw; }
-    var d=p.district&&p.district!=='—'?p.district.split(',')[0].trim():'Unknown';
-    dm[d]=(dm[d]||0)+1;
-  });
-
-  var stgLabels = Object.keys(SCFG).map(k => SCFG[k].label);
-  var stgColors = Object.keys(SCFG).map(k => SCFG[k].color);
-  var scData = Object.keys(SCFG).map(k => sc[k]);
-  var mwcData = Object.keys(SCFG).map(k => Math.round(mwc[k]));
-
-  if (cInstances.pie) cInstances.pie.destroy();
-  cInstances.pie = new Chart(document.getElementById('chartStagePie'), {
-    type: 'pie',
-    data: { labels: stgLabels, datasets:[{ data: scData, backgroundColor: stgColors, borderWidth: 1, borderColor: 'var(--p1)' }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {font: {size: 10, color: Chart.defaults.color}} } } }
-  });
-
-  if (cInstances.barMW) cInstances.barMW.destroy();
-  cInstances.barMW = new Chart(document.getElementById('chartMwBar'), {
-    type: 'bar',
-    data: { labels: stgLabels.map(l=>l.replace(' License','').replace('App. ','A.')), datasets:[{ label: 'Total MW', data: mwcData, backgroundColor: stgColors, borderRadius: 3 }] },
-    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks:{color:Chart.defaults.color}, grid: { display: false } }, y: { ticks:{color:Chart.defaults.color}, grid: gridConfig, beginAtZero: true } }, plugins: { legend: { display: false } } }
-  });
-
-  var dtop = Object.entries(dm).sort((a,b)=>b[1]-a[1]).slice(0, 7);
-  if (cInstances.barDist) cInstances.barDist.destroy();
-  cInstances.barDist = new Chart(document.getElementById('chartDistBar'), {
-    type: 'bar',
-    data: { 
-      labels: dtop.map(d=>d[0].length>10?d[0].substring(0,10)+'..':d[0]), 
-      datasets:[{ label: 'Projects', data: dtop.map(d=>d[1]), backgroundColor: 'var(--acc2)', borderRadius: 3 }] 
-    },
-    options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks:{color:Chart.defaults.color}, grid: { display: false } }, y: { ticks:{color:Chart.defaults.color}, grid: gridConfig, beginAtZero: true } }, plugins: { legend: { display: false } } }
-  });
-}
-
-/* ══ EVENTS & EXPORTS ══ */
-function bindEvs(){
-  document.getElementById('fq').addEventListener('input',deb(applyFilters,150));
-  document.getElementById('fmin').addEventListener('input',function(){MWMIN=+this.value||0;applyFilters();});
-  document.getElementById('fmax').addEventListener('input',function(){MWMAX=+this.value||Infinity;applyFilters();});
-  document.querySelectorAll('.sg').forEach(function(b){ b.addEventListener('click',function(){ SON[b.dataset.s]=SON[b.dataset.s]?0:1; b.classList.toggle('on',!!SON[b.dataset.s]); applyFilters(); }); });
-  document.querySelectorAll('.pv').forEach(function(b){ b.addEventListener('click',function(){ document.querySelectorAll('.pv').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); PROV=b.dataset.pv; applyFilters(); }); });
-  document.querySelectorAll('.mwq').forEach(function(b){ b.addEventListener('click',function(){ document.querySelectorAll('.mwq').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); var v=b.dataset.mw; if(v==='all'){MWMIN=0;MWMAX=Infinity;document.getElementById('fmin').value='';document.getElementById('fmax').value='';}else{var p=v.split(',');MWMIN=+p[0];MWMAX=+p[1];document.getElementById('fmin').value=p[0];document.getElementById('fmax').value=p[1];} applyFilters(); }); });
-  document.querySelectorAll('table.dt th[data-col]').forEach(function(th){ th.addEventListener('click',function(){ var c=th.dataset.col; if(SCOL===c)SDIR=SDIR==='asc'?'desc':'asc';else{SCOL=c;SDIR='asc';} document.querySelectorAll('table.dt th').forEach(function(x){x.className='thn';}); th.className=SDIR==='asc'?'tha':'thd'; renderTable(); }); });
-  dragH(document.getElementById('vh-l'),function(dx){ var el=document.getElementById('lp'); el.style.width=Math.max(155,Math.min(480,el.offsetWidth+dx))+'px'; map.invalidateSize(); if(cInstances.pie) Object.values(cInstances).forEach(c=>c.resize()); });
-  dragH(document.getElementById('vh-r'),function(dx){ var el=document.getElementById('rp'); el.style.width=Math.max(200,Math.min(480,el.offsetWidth-dx))+'px'; map.invalidateSize(); if(cInstances.pie) Object.values(cInstances).forEach(c=>c.resize()); });
-  dragV(document.getElementById('hh'),function(dy){ var el=document.getElementById('tp'); el.style.height=Math.max(60,Math.min(window.innerHeight-200,el.offsetHeight-dy))+'px'; map.invalidateSize(); });
-}
-function dragH(el,fn){ var on=false,lx=0; el.addEventListener('mousedown',function(e){on=true;lx=e.clientX;el.classList.add('on');document.body.style.cssText='cursor:col-resize;user-select:none';e.preventDefault();}); document.addEventListener('mousemove',function(e){if(!on)return;fn(e.clientX-lx);lx=e.clientX;}); document.addEventListener('mouseup',function(){if(on){on=false;el.classList.remove('on');document.body.style.cssText='';}}); }
-function dragV(el,fn){ var on=false,ly=0; el.addEventListener('mousedown',function(e){on=true;ly=e.clientY;el.classList.add('on');document.body.style.cssText='cursor:row-resize;user-select:none';e.preventDefault();}); document.addEventListener('mousemove',function(e){if(!on)return;fn(e.clientY-ly);ly=e.clientY;}); document.addEventListener('mouseup',function(){if(on){on=false;el.classList.remove('on');document.body.style.cssText='';}}); }
-window.resetAll = function(){ document.getElementById('fq').value=''; document.getElementById('fmin').value=''; document.getElementById('fmax').value=''; MWMIN=0; MWMAX=Infinity; Object.keys(SON).forEach(function(k){SON[k]=1;}); document.querySelectorAll('.sg').forEach(function(b){b.classList.add('on');}); PROV='all'; document.querySelectorAll('.pv').forEach(function(b){b.classList.toggle('on',b.dataset.pv==='all');}); document.querySelectorAll('.mwq').forEach(function(b){b.classList.toggle('on',b.dataset.mw==='all');}); applyFilters(); };
-window.exportCSV = function(){ var r=[['Project','MW','Stage','Province','District','River','Promoter','Lic/App No','Issue Date','Validity','Lat N Start','Lat N End','Lon E Start','Lon E End'].join(',')]; FILT.forEach(function(p){ r.push([p.name,p.mw,SCFG[p.stage]?SCFG[p.stage].label:'',p.province,p.district,p.river,p.promoter,p.licno,p.issue,p.validity,fDec(p.lat1),fDec(p.lat2),fDec(p.lon1),fDec(p.lon2)].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',')); }); var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([r.join('\n')],{type:'text/csv'})); a.download='nepal-hydro-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); };
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function deb(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
-
-/* ══ INITIALIZATION (Bulletproof execution on websites) ══ */
-function startApp() {
-    if(window._hydroStarted) return;
-    window._hydroStarted = true;
-    
-    initTheme();
-    bindEvs();
-
-    loadCache();
-    if(ALL.length > 0) {
-        // Instant visual load from local memory
-        updateSyncStatus('CACHED');
-        SRCS.forEach(function(s){STAT[s.id]='ok (cache)';});
-        renderSrcList(); updateKPIs(); applyFilters();
-        setTimeout(function(){ map.invalidateSize(); }, 200);
-        
-        // Silently fetch real updates in the background
-        setTimeout(function(){ window.boot(true); }, 500); 
-    } else {
-        // Brand new user: Fetch from single backup endpoint instantly
-        updateSyncStatus('SEEDING');
-        fetchTFEFallback(function(tfeData) {
-            if(tfeData && tfeData.length > 0) {
-                ALL = tfeData;
-                saveCache();
-                renderSrcList(); updateKPIs(); applyFilters();
-                setTimeout(function(){ map.invalidateSize(); }, 200);
-            }
-            // Move on to fetching live DoED sources
-            window.boot(true);
-        });
-    }
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startApp);
+  document.addEventListener('DOMContentLoaded', startApp);
 } else {
-    startApp();
+  startApp();
 }
-
-})();
 </script>
 </body>
 </html>
