@@ -10,26 +10,22 @@
 <meta name="author" content="Ramkrishna Mahato">
 <link rel="canonical" href="https://www.ramkrishnamahato.com.np/nepalhydro/">
 
-<!-- Open Graph -->
 <meta property="og:title" content="Nepal Hydro | Hydropower Data & Resources">
 <meta property="og:description" content="Nepal hydropower data and resources curated by Civil Engineer Ramkrishna Mahato.">
 <meta property="og:url" content="https://www.ramkrishnamahato.com.np/nepalhydro/">
 <meta property="og:type" content="website">
 
-<!-- Prevent Flash of Incorrect Theme -->
 <script>
   (function(){
     if (localStorage.getItem('theme') === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
   })();
 </script>
 
-<!-- Fonts & CSS -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 :root {
-  /* Dark Mode (Default) */
   --bg: #0d1117; --p1: #161b22; --p2: #1c2128;
   --b1: #30363d; --b2: #21262d;
   --t1: #e6edf3; --t2: #8b949e; --t3: #6e7681;
@@ -37,23 +33,18 @@
   --cs: #f0883e; --cas: #e3b341; --cc: #a78bfa; --cac: #c084fc; --co: #4ade80;
   --r: 5px; --fh: 'Syne', sans-serif; --fd: 'JetBrains Mono', monospace; --f: 'Inter', sans-serif;
 }
-
 [data-theme="light"] {
-  /* Light Mode */
   --bg: #f6f8fa; --p1: #ffffff; --p2: #f3f4f6;
   --b1: #d0d7de; --b2: #e1e4e8;
   --t1: #24292f; --t2: #57606a; --t3: #6e7781;
   --acc: #0969da; --acc2: #0349b4;
 }
-
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);color:var(--t1);font-size:13px; transition: background 0.2s, color 0.2s;}
 
-/* TOP PROGRESS BAR */
 #top-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--acc2), var(--acc)); width: 0%; z-index: 9999; transition: width 0.3s ease, opacity 0.3s ease; opacity: 0; pointer-events: none; }
 
-/* ── TOP BAR ── */
-#bar{height:42px;display:flex;align-items:center;padding:0 14px;background:var(--p1);border-bottom:1px solid var(--b1);gap:10px;flex-shrink:0; transition: background 0.2s, border-color 0.2s;}
+#bar{height:42px;display:flex;align-items:center;padding:0 14px;background:var(--p1);border-bottom:1px solid var(--b1);gap:10px;flex-shrink:0;}
 .bar-logo{font-family:var(--fh);font-weight:800;font-size:.95rem;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .bar-logo em{color:var(--acc);font-style:normal}
 .bar-src{font-size:.58rem;color:var(--t3);font-family:var(--fd);border-left:1px solid var(--b2);padding-left:10px;white-space:nowrap}
@@ -66,8 +57,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .kpi.ko .v{color:var(--co)}.kpi.kt .v{color:var(--acc)}
 .bar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
-/* Sync status indicators */
-.live{display:flex;align-items:center;gap:5px;font-size:.62rem;font-family:var(--fd); margin-right: 4px; font-weight:600;}
+.live{display:flex;align-items:center;gap:5px;font-size:.62rem;font-family:var(--fd);margin-right:4px;font-weight:600;}
 .live-dot{width:6px;height:6px;border-radius:50%;}
 .spinner { width: 10px; height: 10px; border: 2px solid var(--t3); border-top-color: var(--co); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -79,38 +69,32 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .btn.sp .ri{display:inline-block;animation:rot .5s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 
-/* ── LAYOUT ── */
 #shell{display:flex;height:calc(100vh - 42px);overflow:hidden}
-.panel{background:var(--p1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0; transition: background 0.2s;}
+.panel{background:var(--p1);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
 #lp{width:265px;min-width:155px;max-width:480px;border-right:1px solid var(--b1)}
 #rp{width:320px;min-width:200px;max-width:480px;border-left:1px solid var(--b1)}
 #cp{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:200px}
 
-/* HANDLES */
 .vh{width:5px;background:var(--b2);cursor:col-resize;flex-shrink:0;transition:background .15s;z-index:10}
 .vh:hover,.vh.on{background:var(--acc)}
 .hh{height:5px;background:var(--b2);cursor:row-resize;flex-shrink:0;transition:background .15s}
 .hh:hover,.hh.on{background:var(--acc)}
 
-/* SCROLL */
 .psc{flex:1;overflow-y:auto;overflow-x:hidden}
 .psc::-webkit-scrollbar{width:4px}
 .psc::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
 
-/* SECTIONS */
-.sec{padding:10px 12px;border-bottom:1px solid var(--b2); transition: border-color 0.2s;}
+.sec{padding:10px 12px;border-bottom:1px solid var(--b2);}
 .sh{font-family:var(--fh);font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
 .sh a{color:var(--acc);font-size:.57rem;font-weight:400;text-decoration:none}
 .sh a:hover{text-decoration:underline}
 
-/* SEARCH */
 .srch{position:relative}
 .srch svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;stroke:var(--t3);fill:none;stroke-width:2;stroke-linecap:round}
 .srch input{width:100%;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);padding:6px 8px 6px 26px;color:var(--t1);font-size:.77rem;font-family:var(--f);outline:none;transition:border-color .15s}
 .srch input::placeholder{color:var(--t3)}
 .srch input:focus{border-color:var(--acc)}
 
-/* STAGE BTNS */
 .stgs{display:flex;flex-direction:column;gap:3px}
 .sg{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:var(--r);border:1px solid var(--b1);background:none;cursor:pointer;font-family:var(--f);font-size:.71rem;color:var(--t2);width:100%;text-align:left;transition:all .15s}
 .sg:hover{color:var(--t1);border-color:var(--t3)}
@@ -123,7 +107,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .scnt{margin-left:auto;font-family:var(--fd);font-size:.62rem;color:var(--t3)}
 
-/* PROVINCE & MW */
 .pvs, .mwqs, .bbs {display:flex;flex-wrap:wrap;gap:3px}
 .pv, .mwq, .bb {padding:2px 8px;border-radius:2px;border:1px solid var(--b1);background:none;color:var(--t3);font-size:.64rem;font-family:var(--fd);cursor:pointer;transition:all .15s}
 .pv:hover, .mwq:hover, .bb:hover {border-color:var(--t3);color:var(--t1)}
@@ -134,13 +117,11 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .rr input:focus{border-color:var(--acc)}
 .rsep{color:var(--t3);font-size:.7rem}
 
-/* LAYERS */
 .lyrs{display:flex;flex-direction:column;gap:4px}
 .lyr{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);border:1px solid var(--b1);font-size:.71rem;color:var(--t2);cursor:pointer;user-select:none;transition:border-color .15s}
 .lyr:hover{border-color:var(--t3);color:var(--t1)}
 .lyr input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:13px;height:13px}
 
-/* SOURCES */
 .srcl{display:flex;flex-direction:column;gap:3px}
 .sri{display:flex;align-items:center;gap:6px;font-size:.67rem;font-family:var(--fd);color:var(--t3)}
 .sri a{color:var(--acc);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem}
@@ -148,14 +129,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .sdot2{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background .3s}
 .sst{font-size:.6rem;flex-shrink:0; font-weight:600;}
 
-/* ACTIONS */
 .ar{display:flex;gap:5px}
 .ab{flex:1;padding:6px 8px;background:var(--p2);border:1px solid var(--b1);border-radius:var(--r);color:var(--t2);font-family:var(--f);font-size:.71rem;cursor:pointer;transition:all .15s;text-align:center; font-weight:500;}
 .ab:hover{background:var(--b1);color:var(--t1)}
 .ab.pr{background:var(--acc2);border-color:var(--acc);color:#fff}
 .ab.pr:hover{background:var(--acc)}
 
-/* MAP */
 #mapbox{flex:1;min-height:80px;position:relative;overflow:hidden}
 #map{width:100%;height:100%;background:var(--bg)}
 .mov{position:absolute;z-index:900;background:var(--p1);border:1px solid var(--b1);border-radius:var(--r);backdrop-filter:blur(6px); opacity: 0.95; box-shadow: 0 4px 15px rgba(0,0,0,0.15);}
@@ -166,8 +145,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 #map-sb{top:10px;left:50%;transform:translateX(-50%);padding:6px 14px;font-size:.66rem;color:var(--t2);font-family:var(--fd);white-space:nowrap;pointer-events:none;max-width:70%;overflow:hidden;text-overflow:ellipsis}
 .leaflet-interactive { transition: stroke-width 0.2s, stroke-opacity 0.2s, fill-opacity 0.2s; }
 
-/* TABLE PANEL */
-#tp{min-height:60px;background:var(--p1);display:flex;flex-direction:column;border-top:1px solid var(--b1); transition: background 0.2s;}
+#tp{min-height:60px;background:var(--p1);display:flex;flex-direction:column;border-top:1px solid var(--b1);}
 .tbar{display:flex;align-items:center;padding:5px 12px;border-bottom:1px solid var(--b1);gap:8px;flex-shrink:0;height:33px}
 .ti{font-family:var(--fd);font-size:.68rem;color:var(--t3)}
 .ti strong{color:var(--t1)}.ti .mwv{color:var(--acc)}
@@ -177,23 +155,23 @@ html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);
 .tsc::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
 
 table.dt{width:100%;border-collapse:collapse;font-size:.7rem;table-layout:fixed}
-table.dt th{position:sticky;top:0;z-index:2;background:var(--p2);color:var(--t3);padding:5px 8px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1);font-family:var(--fd);font-size:.59rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;transition:color .15s, background 0.2s;overflow:hidden;text-overflow:ellipsis}
+table.dt th{position:sticky;top:0;z-index:2;background:var(--p2);color:var(--t3);padding:5px 8px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1);font-family:var(--fd);font-size:.59rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;transition:color .15s;overflow:hidden;text-overflow:ellipsis}
 table.dt th:hover{color:var(--t1)}
-table.dt th:nth-child(1){width:220px}   
-table.dt th:nth-child(2){width:64px}    
-table.dt th:nth-child(3){width:110px}   
-table.dt th:nth-child(4){width:90px}    
-table.dt th:nth-child(5){width:90px}    
-table.dt th:nth-child(6){width:90px}    
-table.dt th:nth-child(7){width:110px}   
-table.dt th:nth-child(8){width:160px}   
-table.dt th:nth-child(9){width:130px}   
-table.dt th:nth-child(10){width:90px}   
-table.dt th:nth-child(11){width:90px}   
-table.dt th:nth-child(12){width:90px}   
-table.dt th:nth-child(13){width:90px}   
-table.dt th:nth-child(14){width:200px}  
-table.dt th:nth-child(15){width:110px}  
+table.dt th:nth-child(1){width:220px}
+table.dt th:nth-child(2){width:64px}
+table.dt th:nth-child(3){width:110px}
+table.dt th:nth-child(4){width:90px}
+table.dt th:nth-child(5){width:90px}
+table.dt th:nth-child(6){width:90px}
+table.dt th:nth-child(7){width:110px}
+table.dt th:nth-child(8){width:160px}
+table.dt th:nth-child(9){width:130px}
+table.dt th:nth-child(10){width:90px}
+table.dt th:nth-child(11){width:90px}
+table.dt th:nth-child(12){width:90px}
+table.dt th:nth-child(13){width:90px}
+table.dt th:nth-child(14){width:200px}
+table.dt th:nth-child(15){width:110px}
 table.dt td{padding:5px 8px;border-bottom:1px solid var(--b2);white-space:nowrap;color:var(--t2);vertical-align:middle;font-size:.7rem;overflow:hidden;text-overflow:ellipsis}
 table.dt td.nm{font-weight:500;color:var(--t1);cursor:pointer}
 table.dt td.nm:hover{color:var(--acc);text-decoration:underline}
@@ -212,7 +190,6 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 .tg-ac{background:rgba(192,132,252,.12);color:var(--cac)}
 .tg-o{background:rgba(74,222,128,.1);color:var(--co)}
 
-/* RIGHT PANEL */
 #det{padding:0;border-bottom:1px solid var(--b2);overflow:hidden}
 .det-emp{color:var(--t3);font-size:.73rem;font-style:italic;text-align:center;padding:28px 12px}
 .det-head{padding:10px 12px 8px;border-bottom:1px solid var(--b2)}
@@ -228,13 +205,11 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 .det-gmaps{display:block;padding:7px 12px;font-size:.67rem;font-family:var(--fd);color:var(--acc);text-decoration:none;border-top:1px solid var(--b2)}
 .det-gmaps:hover{background:rgba(88,166,255,.06)}
 
-/* CHARTS */
 .csec{padding:10px 12px; border-bottom:1px solid var(--b2)}
 .csec h5{font-family:var(--fh);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:12px}
 .chart-wrapper{position:relative; width:100%; height:200px; display:flex; justify-content:center; align-items:center;}
 .chart-wrapper.pie-wrap{height: 220px;}
 
-/* LEAFLET OVERRIDES */
 .leaflet-container{background:var(--bg)!important; font-family:var(--f)!important;}
 .leaflet-control-zoom a{background:var(--p2)!important;color:var(--t1)!important;border-color:var(--b1)!important}
 .leaflet-control-zoom a:hover{background:var(--b1)!important}
@@ -270,7 +245,6 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 </div>
 
 <div id="shell">
-  <!-- LEFT PANEL -->
   <div class="panel" id="lp">
     <div class="psc">
       <div class="sec">
@@ -358,7 +332,6 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 
   <div class="vh" id="vh-l"></div>
 
-  <!-- CENTER MAP & TABLE -->
   <div id="cp">
     <div id="mapbox">
       <div id="map"></div>
@@ -415,7 +388,6 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
 
   <div class="vh" id="vh-r"></div>
 
-  <!-- RIGHT PANEL & CHARTS -->
   <div class="panel" id="rp">
     <div class="psc">
       <div id="det"><div class="det-emp">Click a project to view details</div></div>
@@ -435,105 +407,834 @@ table.dt tr.sel td{background:rgba(88,166,255,.12)!important}
   </div>
 </div>
 
-<!-- EXTERNAL SCRIPTS AT BOTTOM FOR INSTANT LOAD -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <script>
+<script>
+(function(){'use strict';
+
 /* ═══════════════════════════════════════════════════════════
-   DATA LOADING — Simple fetch from same-origin data.json
+   CONFIG
    ═══════════════════════════════════════════════════════════ */
-var CACHE_KEY = 'nepalHydroData_v3';
-var DATA_URL = './data.json';   // served from same GitHub Pages origin
+var SCFG={
+  survey:         {label:'Survey License',    color:'#f0883e', tcls:'tg-s'},
+  appsurvey:      {label:'App. Survey',       color:'#e3b341', tcls:'tg-as'},
+  construction:   {label:'Construction',      color:'#a78bfa', tcls:'tg-c'},
+  appconstruction:{label:'App. Construction', color:'#c084fc', tcls:'tg-ac'},
+  operational:    {label:'Operational',       color:'#4ade80', tcls:'tg-o'}
+};
+
+/* DoED source pages (attempted via proxies) */
+var SRCS=[
+  {id:'s1', label:'Survey >1MW',       url:'https://doed.gov.np/pages/hydromorethan1/',       stg:'survey'},
+  {id:'s2', label:'Survey <1MW',       url:'https://doed.gov.np/pages/hydrolessthan1/',       stg:'survey'},
+  {id:'as1',label:'App.Survey >1MW',   url:'https://doed.gov.np/pages/appslhydromorethan1/',  stg:'appsurvey'},
+  {id:'as2',label:'App.Survey <1MW',   url:'https://doed.gov.np/pages/appslhydrolessthan1/',  stg:'appsurvey'},
+  {id:'c1', label:'Construction >1MW', url:'https://doed.gov.np/pages/clhydromorethan1/',     stg:'construction'},
+  {id:'c2', label:'Construction <1MW', url:'https://doed.gov.np/pages/clhydrolessthan1/',     stg:'construction'},
+  {id:'ac1',label:'App.Constr.(all)',  url:'https://doed.gov.np/pages/appclhydro/',           stg:'appconstruction'},
+  {id:'o1', label:'Power Plants >1MW', url:'https://doed.gov.np/pages/powerplantsmorethan1/', stg:'operational'},
+  {id:'o2', label:'Power Plants <1MW', url:'https://doed.gov.np/pages/powerplantslessthan1/', stg:'operational'}
+];
+
+/* ═══════════════════════════════════════════════════════════
+   THEME
+   ═══════════════════════════════════════════════════════════ */
+var gridConfig = { color: 'rgba(255, 255, 255, 0.05)' };
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(13, 17, 23, 0.9)';
+Chart.defaults.plugins.tooltip.borderColor = '#30363d';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+
+window.toggleTheme = function() {
+    var root = document.documentElement;
+    if(root.getAttribute('data-theme') === 'light') {
+        root.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'dark');
+        document.getElementById('btn-theme').textContent = '☀️ Light';
+        Chart.defaults.color = '#8b949e';
+        gridConfig.color = 'rgba(255, 255, 255, 0.05)';
+    } else {
+        root.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        document.getElementById('btn-theme').textContent = '🌙 Dark';
+        Chart.defaults.color = '#57606a';
+        gridConfig.color = 'rgba(0, 0, 0, 0.05)';
+    }
+    if(cInstances.pie) { cInstances.pie.options.plugins.legend.labels.color = Chart.defaults.color; cInstances.pie.update(); }
+    if(cInstances.barMW) { cInstances.barMW.options.scales.x.ticks.color = Chart.defaults.color; cInstances.barMW.options.scales.y.ticks.color = Chart.defaults.color; cInstances.barMW.options.scales.y.grid.color = gridConfig.color; cInstances.barMW.update(); }
+    if(cInstances.barDist) { cInstances.barDist.options.scales.x.ticks.color = Chart.defaults.color; cInstances.barDist.options.scales.y.ticks.color = Chart.defaults.color; cInstances.barDist.options.scales.y.grid.color = gridConfig.color; cInstances.barDist.update(); }
+};
+
+function initTheme() {
+    if (localStorage.getItem('theme') === 'light') {
+        document.getElementById('btn-theme').textContent = '🌙 Dark';
+        Chart.defaults.color = '#57606a';
+        gridConfig.color = 'rgba(0, 0, 0, 0.05)';
+    } else {
+        document.getElementById('btn-theme').textContent = '☀️ Light';
+        Chart.defaults.color = '#8b949e';
+    }
+}
+
+function updateSyncStatus(state) {
+   var el = document.getElementById('sync-status');
+   if(state === 'SYNCING') {
+       el.innerHTML = '<div class="spinner"></div><span style="color:var(--acc)">SYNCING</span>';
+   } else if(state === 'CACHED') {
+       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">CACHED</span>';
+   } else if(state === 'SEEDING') {
+       el.innerHTML = '<div class="spinner" style="border-top-color:var(--cas)"></div><span style="color:var(--cas)">LOADING</span>';
+   } else if(state === 'LIVE') {
+       el.innerHTML = '<div class="live-dot" style="background:var(--co); animation:bk 2s infinite"></div><span style="color:var(--co)">LIVE DATA</span>';
+   } else if(state === 'PARTIAL') {
+       el.innerHTML = '<div class="live-dot" style="background:var(--cas)"></div><span style="color:var(--cas)">PARTIAL</span>';
+   } else {
+       el.innerHTML = '<div class="spinner"></div><span style="color:var(--cas)">' + state + '</span>';
+   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROVINCE LOOKUP
+   ═══════════════════════════════════════════════════════════ */
+var DP={
+  TAPLEJUNG:'Koshi',PANCHTHAR:'Koshi',ILAM:'Koshi',JHAPA:'Koshi',MORANG:'Koshi',SUNSARI:'Koshi',DHANKUTA:'Koshi',TERHATHUM:'Koshi',BHOJPUR:'Koshi',SOLUKHUMBU:'Koshi',OKHALDHUNGA:'Koshi',KHOTANG:'Koshi',UDAYAPUR:'Koshi',SANKHUWASABHA:'Koshi',
+  SAPTARI:'Madhesh',SIRAHA:'Madhesh',DHANUSA:'Madhesh',MAHOTTARI:'Madhesh',SARLAHI:'Madhesh',RAUTAHAT:'Madhesh',BARA:'Madhesh',PARSA:'Madhesh',
+  SINDHULI:'Bagmati',RAMECHHAP:'Bagmati',DOLAKHA:'Bagmati',SINDHUPALCHOK:'Bagmati',KAVREPALANCHOK:'Bagmati',KABHREPALANCHOK:'Bagmati',LALITPUR:'Bagmati',BHAKTAPUR:'Bagmati',KATHMANDU:'Bagmati',NUWAKOT:'Bagmati',RASUWA:'Bagmati',DHADING:'Bagmati',MAKWANPUR:'Bagmati',MAKAWANPUR:'Bagmati',CHITWAN:'Bagmati',CHITAWAN:'Bagmati',
+  GORKHA:'Gandaki',LAMJUNG:'Gandaki',TANAHU:'Gandaki',SYANGJA:'Gandaki',KASKI:'Gandaki',MANANG:'Gandaki',MUSTANG:'Gandaki',MYAGDI:'Gandaki',PARBAT:'Gandaki',NAWALPARASI:'Gandaki',BAGLUNG:'Gandaki',NAWALPUR:'Gandaki',
+  RUPANDEHI:'Lumbini',KAPILBASTU:'Lumbini',ARGHAKHANCHI:'Lumbini',PALPA:'Lumbini',GULMI:'Lumbini',PYUTHAN:'Lumbini',ROLPA:'Lumbini',RUKUM:'Lumbini',DANG:'Lumbini',BANKE:'Lumbini',BARDIYA:'Lumbini',
+  SURKHET:'Karnali',DAILEKH:'Karnali',JAJARKOT:'Karnali',DOLPA:'Karnali',JUMLA:'Karnali',KALIKOT:'Karnali',MUGU:'Karnali',SALYAN:'Karnali',HUMLA:'Karnali',
+  BAJURA:'Sudurpaschim',BAJHANG:'Sudurpaschim',ACHHAM:'Sudurpaschim',DOTI:'Sudurpaschim',KAILALI:'Sudurpaschim',KANCHANPUR:'Sudurpaschim',DADELDHURA:'Sudurpaschim',BAITADI:'Sudurpaschim',DARCHULA:'Sudurpaschim'
+};
+
+function getProv(raw){
+  if(!raw) return '—';
+  var up=raw.toUpperCase();
+  for(var k in DP){ if(up.indexOf(k)!==-1) return DP[k]; }
+  return '—';
+}
+
+function dms2dec(s){
+  if(!s) return NaN;
+  s=String(s).trim().replace(/°/g,'o').replace(/[''′`]/g,"'").replace(/[""″]/g,'"');
+  var m=s.match(/^(\d{1,3}(?:\.\d+)?)\s*o\s*(?:(\d{1,2}(?:\.\d+)?)\s*'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*"?)?)?/i);
+  if(!m) return NaN;
+  return (+m[1]||0) + (+m[2]||0)/60 + (+m[3]||0)/3600;
+}
+function vLat(v){return !isNaN(v)&&v>=25&&v<=32;}
+function vLon(v){return !isNaN(v)&&v>=79&&v<=90;}
+function fDec(v){return isNaN(v)?'':v.toFixed(5);}
+
+/* ═══════════════════════════════════════════════════════════
+   HTML TABLE PARSER (DoED format)
+   ═══════════════════════════════════════════════════════════ */
+function parseTable(html, src){
+  var doc = (new DOMParser()).parseFromString(html, 'text/html');
+  var out = [];
+  doc.querySelectorAll('table').forEach(function(tbl){
+    var rows = Array.from(tbl.querySelectorAll('tr'));
+    var dataStart = -1;
+    for(var i=0; i<rows.length && i<20; i++){
+      if(rows[i].querySelectorAll('td').length >= 13){ dataStart = i; break; }
+    }
+    if(dataStart < 0) return;
+
+    rows.slice(dataStart).forEach(function(r){
+      var cells = Array.from(r.querySelectorAll('td'));
+      if(cells.length < 13) return;
+      var cv = function(i){ return cells[i] ? cells[i].textContent.trim().replace(/\s+/g, ' ') : ''; };
+
+      var name = cv(1);
+      if(!name || name.length < 2 || /total|जम्मा|grand/i.test(name)) return;
+      var mw = parseFloat(cv(2).replace(/,/g,'')) || 0;
+
+      var licno, issue, validity, promoter, address, lat1, lat2, lon1, lon2, vdcRaw;
+      if(cells.length === 13){
+        licno = cv(4); issue = cv(5); validity = '—';
+        promoter = cv(6); address = cv(7);
+        lat1 = dms2dec(cv(8)); lat2 = dms2dec(cv(9));
+        lon1 = dms2dec(cv(10)); lon2 = dms2dec(cv(11));
+        vdcRaw = cv(12);
+      } else {
+        licno = cv(4); issue = cv(5); validity = cv(6);
+        promoter = cv(7); address = cv(8);
+        lat1 = dms2dec(cv(9)); lat2 = dms2dec(cv(10));
+        lon1 = dms2dec(cv(11)); lon2 = dms2dec(cv(12));
+        vdcRaw = cv(13);
+      }
+
+      if(!vLat(lat1)) lat1 = NaN; if(!vLat(lat2)) lat2 = NaN;
+      if(!vLon(lon1)) lon1 = NaN; if(!vLon(lon2)) lon2 = NaN;
+
+      var clat = NaN, clon = NaN;
+      if(!isNaN(lat1) && !isNaN(lat2)) clat = (lat1 + lat2) / 2; else if(!isNaN(lat1)) clat = lat1;
+      if(!isNaN(lon1) && !isNaN(lon2)) clon = (lon1 + lon2) / 2; else if(!isNaN(lon1)) clon = lon1;
+
+      var province = getProv(vdcRaw);
+      var allDists = [], re = /\(([^)]+)\)/g, mm;
+      while((mm = re.exec(vdcRaw)) !== null){
+        var d = mm[1].trim();
+        if(d && allDists.indexOf(d) < 0) allDists.push(d);
+      }
+      var district = allDists.length ? allDists.join(', ') : '—';
+
+      out.push({
+        sourceId: src.id, name: name, mw: mw, stage: src.stg,
+        licno: licno, issue: issue, validity: validity,
+        promoter: promoter, address: address,
+        lat1: lat1, lat2: lat2, lon1: lon1, lon2: lon2,
+        clat: clat, clon: clon, vdc: vdcRaw,
+        district: district, province: province, river: cv(3)
+      });
+    });
+  });
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TFE PARSER (toolsforengineers — flatter table)
+   ═══════════════════════════════════════════════════════════ */
+function parseTFE(html){
+  try {
+    var doc = (new DOMParser()).parseFromString(html, 'text/html');
+    var out = [];
+    // Find any table that mentions 'Province' in header
+    var tables = Array.from(doc.querySelectorAll('table'));
+    var target = tables.find(function(t){ return /Province/i.test(t.textContent) && /Stage/i.test(t.textContent); });
+    if(!target) return [];
+
+    target.querySelectorAll('tr').forEach(function(r){
+      var tds = r.querySelectorAll('td');
+      if(tds.length < 13) return;
+      var cv = function(i){ return tds[i] ? tds[i].textContent.trim() : ''; };
+
+      var name = cv(0);
+      if(!name || /^Project/i.test(name) || name.length < 2) return;
+
+      var mw = parseFloat(cv(1).replace(/,/g,'')) || 0;
+      var stageStr = cv(2).toLowerCase();
+      var stg = 'survey';
+      if(stageStr.indexOf('application for survey') >= 0) stg = 'appsurvey';
+      else if(stageStr.indexOf('application for construction') >= 0) stg = 'appconstruction';
+      else if(stageStr.indexOf('construction') >= 0) stg = 'construction';
+      else if(stageStr.indexOf('operational') >= 0) stg = 'operational';
+
+      var lat = parseFloat(cv(11));
+      var lon = parseFloat(cv(12));
+      if(!vLat(lat)) lat = NaN;
+      if(!vLon(lon)) lon = NaN;
+
+      var vdcRaw = cv(10);
+      var province = cv(3) || getProv(vdcRaw);
+      var dists = [], re = /\(([^)]+)\)/g, mm;
+      while((mm = re.exec(vdcRaw)) !== null){
+        var d = mm[1].trim();
+        if(d && dists.indexOf(d) < 0) dists.push(d);
+      }
+      var district = dists.length ? dists.join(', ') : (vdcRaw || '—');
+
+      out.push({
+        sourceId: 'tfe', name: name, mw: mw, stage: stg,
+        licno: cv(5), issue: cv(6), validity: cv(7),
+        promoter: cv(8), address: cv(9),
+        lat1: lat, lat2: lat, lon1: lon, lon2: lon,
+        clat: lat, clon: lon, vdc: vdcRaw,
+        district: district, province: province, river: cv(4)
+      });
+    });
+    return out;
+  } catch(e){ return []; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROXY ENGINE — multiple reliable public CORS proxies
+   ═══════════════════════════════════════════════════════════ */
+
+// Working proxies (tested mid-2026). Order: most reliable first.
+var PROXIES = [
+  { name:'allorigins-raw', pfx:'https://api.allorigins.win/raw?url=',  enc:true,  json:false },
+  { name:'corsproxy.io',   pfx:'https://corsproxy.io/?url=',            enc:true,  json:false },
+  { name:'codetabs',       pfx:'https://api.codetabs.com/v1/proxy?quest=', enc:false, json:false },
+  { name:'thingproxy',     pfx:'https://thingproxy.freeboard.io/fetch/', enc:false, json:false },
+  { name:'allorigins-get', pfx:'https://api.allorigins.win/get?url=',   enc:true,  json:true  }
+];
+
+function fetchViaProxy(targetUrl, timeoutMs){
+  timeoutMs = timeoutMs || 14000;
+  // Shuffle proxy order per call for load distribution
+  var order = PROXIES.slice().sort(function(){ return Math.random() - 0.5; });
+  var idx = 0;
+
+  return new Promise(function(resolve, reject){
+    function tryNext(){
+      if(idx >= order.length * 2){ reject(new Error('All proxies failed')); return; }
+      var proxy = order[idx % order.length];
+      idx++;
+      var fullUrl = proxy.pfx + (proxy.enc ? encodeURIComponent(targetUrl) : targetUrl);
+      var ctrl = new AbortController();
+      var timer = setTimeout(function(){ ctrl.abort(); tryNext(); }, timeoutMs);
+
+      fetch(fullUrl, { signal: ctrl.signal })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(function(text){
+          clearTimeout(timer);
+          if(!text || text.length < 300) throw new Error('Too short');
+          // Unwrap JSON-wrapped responses
+          var t = text.trim();
+          if(t.charAt(0) === '{'){
+            try {
+              var j = JSON.parse(t);
+              if(j.contents) text = j.contents;
+              else if(j.body) text = j.body;
+            } catch(e){}
+          }
+          resolve({ text: text, proxy: proxy.name });
+        })
+        .catch(function(){ clearTimeout(timer); tryNext(); });
+    }
+    tryNext();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DATA FETCH — DoED + TFE fallback
+   ═══════════════════════════════════════════════════════════ */
+function fetchSrc(src){
+  return fetchViaProxy(src.url, 14000).then(function(res){
+    var projects = parseTable(res.text, src);
+    if(!projects.length) throw new Error('Empty parse');
+    return projects;
+  });
+}
+
+function fetchTFE(){
+  return fetchViaProxy('https://hydropower.toolsforengineers.com/', 18000).then(function(res){
+    var projects = parseTFE(res.text);
+    if(!projects.length) throw new Error('Empty TFE');
+    return projects;
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════ */
+var CACHE_KEY = 'nepalHydroData_v4';
+var CACHE_META_KEY = 'nepalHydroMeta_v4';
 var ALL=[], FILT=[], SON={survey:1,appsurvey:1,construction:1,appconstruction:1,operational:1};
 var PROV='all', MWMIN=0, MWMAX=Infinity, SCOL='mw', SDIR='desc', SEL=null, STAT={};
 var cInstances={ pie:null, barMW:null, barDist:null };
 
-function loadCache() { try { const d = localStorage.getItem(CACHE_KEY); if (d) ALL = JSON.parse(d).projects || []; } catch(e){} }
-function saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ projects: ALL, cached: Date.now() })); } catch(e){} }
+function loadCache(){
+  try {
+    var d = localStorage.getItem(CACHE_KEY);
+    if(d){ ALL = JSON.parse(d) || []; }
+  } catch(e){}
+}
+function saveCache(){
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(ALL));
+    localStorage.setItem(CACHE_META_KEY, JSON.stringify({ ts: Date.now(), count: ALL.length }));
+  } catch(e){}
+}
 
-window.boot = function(forceLive){
+/* ═══════════════════════════════════════════════════════════
+   MAP
+   ═══════════════════════════════════════════════════════════ */
+var map=L.map('map',{center:[28.2,84.1], zoom:7, zoomControl:false, maxZoom:24});
+L.control.zoom({ position: 'topleft' }).addTo(map);
+
+var TILES={
+  osm: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:24, maxNativeZoom:19, attribution:'© OpenStreetMap © CARTO'}),
+  topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:24, maxNativeZoom:18, attribution:'© Esri'}),
+  esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:24, maxNativeZoom:18, attribution:'© Esri'}),
+  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:24, maxNativeZoom:19, attribution:'© CARTO'})
+};
+var curBase='osm'; TILES.osm.addTo(map);
+
+document.querySelectorAll('.bb').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.bb').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on'); map.removeLayer(TILES[curBase]);
+    curBase=b.dataset.base; TILES[curBase].addTo(map);
+  });
+});
+
+var mkLyr=L.layerGroup().addTo(map), bdLyr=L.layerGroup().addTo(map);
+var showMk=true, showBd=true, markerMap={};
+
+document.getElementById('lmk').onchange=function(){showMk=this.checked; if(showMk)mkLyr.addTo(map);else map.removeLayer(mkLyr);};
+document.getElementById('lbd').onchange=function(){showBd=this.checked; if(showBd)bdLyr.addTo(map);else map.removeLayer(bdLyr);};
+
+/* ═══════════════════════════════════════════════════════════
+   BOOT LOGIC
+   ═══════════════════════════════════════════════════════════ */
+window.boot = function(force){
   document.getElementById('btn-ref').classList.add('sp');
   updateSyncStatus('SYNCING');
 
-  const pbar = document.getElementById('top-progress');
+  var pbar = document.getElementById('top-progress');
   pbar.style.transition = 'none'; pbar.style.width = '0%'; pbar.style.opacity = '1';
-  setTimeout(function(){ pbar.style.transition = 'width 0.3s ease, opacity 0.3s ease'; pbar.style.width = '30%'; }, 50);
+  setTimeout(function(){
+    pbar.style.transition = 'width 0.3s ease, opacity 0.3s ease';
+    pbar.style.width = '5%';
+  }, 50);
 
-  // Bust GitHub Pages CDN cache with a timestamp query
-  const url = DATA_URL + '?t=' + Date.now();
+  var done = 0, n = SRCS.length;
+  SRCS.forEach(function(s){ STAT[s.id] = 'ld'; });
+  renderSrcList();
 
-  fetch(url, { cache: 'no-store' })
-    .then(function(r){
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(payload){
-      pbar.style.width = '100%';
-      const projects = Array.isArray(payload) ? payload : (payload.projects || []);
+  var allFetched = [];
+  var fetchedIds = {};
 
-      if (projects.length === 0 && ALL.length > 0) {
-        console.warn('data.json empty — keeping cached data');
-        updateSyncStatus('LIVE');
+  SRCS.forEach(function(src){
+    fetchSrc(src).then(function(projects){
+      fetchedIds[src.id] = true;
+      STAT[src.id] = 'ok';
+      allFetched = allFetched.concat(projects);
+      onDone();
+    }).catch(function(err){
+      STAT[src.id] = 'fail';
+      onDone();
+    });
+  });
+
+  function onDone(){
+    done++;
+    pbar.style.width = Math.round((done / n) * 80) + '%'; // leave room for TFE
+
+    if(done === n){
+      var failCount = SRCS.filter(function(s){ return STAT[s.id] === 'fail'; }).length;
+
+      if(allFetched.length > 0){
+        // Got at least some DoED data. If we got everything, done.
+        if(failCount === 0){
+          finalize(allFetched, 'LIVE');
+        } else {
+          // Partial — also try TFE to fill gaps
+          updateSyncStatus('PARTIAL');
+          fetchTFE().then(function(tfeData){
+            finalize(allFetched.concat(tfeData), 'PARTIAL');
+          }).catch(function(){
+            finalize(allFetched, 'PARTIAL');
+          });
+        }
       } else {
-        ALL = projects;
-        saveCache();
-        updateSyncStatus('LIVE');
-        SRCS.forEach(function(s){ STAT[s.id] = 'ok'; });
+        // All DoED failed — fall back entirely to TFE
+        updateSyncStatus('SEEDING');
+        fetchTFE().then(function(tfeData){
+          if(tfeData.length > 0) finalize(tfeData, 'LIVE');
+          else finalize([], 'OFFLINE');
+        }).catch(function(){
+          finalize([], 'OFFLINE');
+        });
       }
+    }
+  }
 
-      if (payload.updated) {
-        const d = new Date(payload.updated);
-        document.getElementById('ts').textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      } else {
-        document.getElementById('ts').textContent = new Date().toLocaleString();
-      }
+  function finalize(projects, status){
+    pbar.style.width = '100%';
 
-      renderSrcList(); updateKPIs(); applyFilters();
-
-      setTimeout(function(){
-        pbar.style.opacity = '0';
-        document.getElementById('btn-ref').classList.remove('sp');
-        setTimeout(function(){ pbar.style.width = '0%'; }, 300);
-      }, 400);
-    })
-    .catch(function(err){
-      console.error('Failed to load data.json:', err);
-      pbar.style.width = '100%'; pbar.style.opacity = '0';
-      document.getElementById('btn-ref').classList.remove('sp');
-      updateSyncStatus(ALL.length ? 'CACHED' : 'OFFLINE');
-      if (ALL.length === 0) {
-        document.getElementById('tbody').innerHTML = '<tr><td colspan="15" style="text-align:center; padding:40px; color:#f85149;">⚠ Could not load data.json. Check that the GitHub Action has run successfully.</td></tr>';
+    // Deduplicate by name+stage
+    var seen = {}, unique = [];
+    projects.forEach(function(p){
+      var k = (p.name||'').trim().toLowerCase() + '|' + p.stage;
+      if(!seen[k] && p.name){
+        seen[k] = true;
+        unique.push(p);
       }
     });
+
+    // Only overwrite cache if we got meaningful data
+    if(unique.length > 0){
+      ALL = unique;
+      saveCache();
+      updateSyncStatus(status);
+      var meta = { ts: Date.now(), count: ALL.length, status: status };
+      try { localStorage.setItem(CACHE_META_KEY, JSON.stringify(meta)); } catch(e){}
+    } else if(ALL.length > 0){
+      // Keep existing cache
+      updateSyncStatus('CACHED');
+    } else {
+      updateSyncStatus('OFFLINE');
+    }
+
+    var now = new Date();
+    document.getElementById('ts').textContent = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+    renderSrcList(); updateKPIs(); applyFilters();
+
+    setTimeout(function(){
+      pbar.style.opacity = '0';
+      document.getElementById('btn-ref').classList.remove('sp');
+      setTimeout(function(){ pbar.style.width = '0%'; }, 300);
+    }, 500);
+  }
 };
 
-/* INIT */
+function renderSrcList(){
+  document.getElementById('srcl').innerHTML = SRCS.map(function(s){
+    var st = STAT[s.id] || 'pend';
+    var col = '#f85149'; var lbl = '✗ Failed';
+    if(st === 'ok') { col = 'var(--co)'; lbl = '✓ Live'; }
+    else if(st === 'ld') { col = 'var(--acc)'; lbl = '… Syncing'; }
+    else if(st === 'pend') { col = 'var(--t3)'; lbl = '— Pending'; }
+    return '<div class="sri"><div class="sdot2" style="background:'+col+'"></div><a href="'+s.url+'" target="_blank">'+esc(s.label)+'</a><span class="sst" style="color:'+col+'">'+lbl+'</span></div>';
+  }).join('');
+}
+
+function updateKPIs(){
+  var c={survey:0,appsurvey:0,construction:0,appconstruction:0,operational:0};
+  ALL.forEach(function(p){ if(c[p.stage] !== undefined) c[p.stage]++; });
+  document.getElementById('kv-s').textContent = c.survey;
+  document.getElementById('cn-s').textContent = c.survey;
+  document.getElementById('kv-as').textContent = c.appsurvey;
+  document.getElementById('cn-as').textContent = c.appsurvey;
+  document.getElementById('kv-c').textContent = c.construction;
+  document.getElementById('cn-c').textContent = c.construction;
+  document.getElementById('kv-ac').textContent = c.appconstruction;
+  document.getElementById('cn-ac').textContent = c.appconstruction;
+  document.getElementById('kv-o').textContent = c.operational;
+  document.getElementById('cn-o').textContent = c.operational;
+  document.getElementById('kv-t').textContent = ALL.length;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FILTER & RENDER
+   ═══════════════════════════════════════════════════════════ */
+function applyFilters(){
+  var q = (document.getElementById('fq').value || '').toLowerCase().trim();
+  FILT = ALL.filter(function(p){
+    if(!SON[p.stage]) return false;
+    if(PROV !== 'all' && p.province !== PROV) return false;
+    if(p.mw < MWMIN || p.mw > MWMAX) return false;
+    if(q && !(p.name||'').toLowerCase().includes(q)
+         && !(p.district||'').toLowerCase().includes(q)
+         && !(p.vdc||'').toLowerCase().includes(q)
+         && !(p.river||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  var tmw = FILT.reduce(function(a,p){ return a + p.mw; }, 0);
+  document.getElementById('t-sn').textContent = FILT.length.toLocaleString();
+  document.getElementById('t-to').textContent = ALL.length.toLocaleString();
+  document.getElementById('t-mw').textContent = Math.round(tmw).toLocaleString() + ' MW';
+
+  renderTable(); renderMap(); renderCharts();
+}
+
+function renderTable(){
+  var tb = document.getElementById('tbody');
+
+  if(FILT.length === 0){
+    var isSyncing = Object.keys(STAT).some(function(k){ return STAT[k] === 'ld'; });
+    var msg = isSyncing
+      ? 'Syncing live data… Please wait.'
+      : (ALL.length === 0
+         ? '⚠ No data loaded. Click <b>Refresh</b> to retry, or open the browser console for errors.'
+         : 'No projects match the current filters.');
+    tb.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:40px;font-style:italic;color:var(--t3);">' + msg + '</td></tr>';
+    return;
+  }
+
+  var data = FILT.slice().sort(function(a,b){
+    var av = a[SCOL], bv = b[SCOL];
+    if(SCOL === 'name' || SCOL === 'stage' || SCOL === 'river' || SCOL === 'district'){
+      av = String(av || '').toLowerCase();
+      bv = String(bv || '').toLowerCase();
+    }
+    if(av < bv) return SDIR === 'asc' ? -1 : 1;
+    if(av > bv) return SDIR === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  var html = '';
+  for(var i=0; i<data.length; i++){
+    var p = data[i], cfg = SCFG[p.stage], key = p.name + '|' + p.stage;
+    var isSel = SEL && SEL.name === p.name && SEL.stage === p.stage;
+
+    html += '<tr data-key="'+esc(key)+'" class="'+(isSel?'sel':'')+'">'+
+      '<td class="nm" title="'+esc(p.name)+'">'+esc(p.name)+'</td>'+
+      '<td class="mwcol">'+(p.mw ? p.mw.toFixed(2) : '—')+'</td>'+
+      '<td><span class="tag '+cfg.tcls+'">'+cfg.label+'</span></td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem" title="'+esc(p.licno||'')+'">'+esc(p.licno||'—')+'</td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.issue||'—')+'</td>'+
+      '<td style="font-family:var(--fd);font-size:.65rem">'+esc(p.validity||'—')+'</td>'+
+      '<td title="'+esc(p.river||'')+'">'+esc(p.river||'—')+'</td>'+
+      '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis" title="'+esc(p.promoter||'')+'">'+esc(p.promoter||'—')+'</td>'+
+      '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-size:.67rem" title="'+esc(p.address||'')+'">'+esc(p.address||'—')+'</td>'+
+      '<td class="coord">'+(isNaN(p.lat1) ? '—' : p.lat1.toFixed(5))+'</td>'+
+      '<td class="coord">'+(isNaN(p.lat2) ? '—' : p.lat2.toFixed(5))+'</td>'+
+      '<td class="coord">'+(isNaN(p.lon1) ? '—' : p.lon1.toFixed(5))+'</td>'+
+      '<td class="coord">'+(isNaN(p.lon2) ? '—' : p.lon2.toFixed(5))+'</td>'+
+      '<td class="vdc" title="'+esc(p.vdc||'')+'">'+esc(p.vdc||'—')+'</td>'+
+      '<td>'+esc(p.province||'—')+'</td></tr>';
+  }
+  tb.innerHTML = html;
+}
+
+document.getElementById('tbody').addEventListener('click', function(e){
+  var tr = e.target.closest('tr');
+  if(!tr) return;
+  var key = tr.dataset.key;
+  var p = FILT.find(function(x){ return (x.name + '|' + x.stage) === key; });
+  if(p) selectProj(p);
+});
+
+function renderMap(){
+  mkLyr.clearLayers(); bdLyr.clearLayers(); markerMap = {};
+  FILT.forEach(function(p){
+    var cfg = SCFG[p.stage]; if(!cfg) return;
+    var isSel = SEL && SEL.name === p.name && SEL.stage === p.stage;
+
+    if(showBd && !isNaN(p.lat1) && !isNaN(p.lat2) && !isNaN(p.lon1) && !isNaN(p.lon2)){
+      var sLat=Math.min(p.lat1,p.lat2), nLat=Math.max(p.lat1,p.lat2);
+      var wLon=Math.min(p.lon1,p.lon2), eLon=Math.max(p.lon1,p.lon2);
+      if(nLat-sLat < 5 && eLon-wLon < 5){
+        var rect = L.rectangle([[sLat,wLon],[nLat,eLon]],{
+            color: cfg.color, weight: isSel ? 3 : 2, opacity: isSel ? 1 : 0.85,
+            fillColor: cfg.color, fillOpacity: isSel ? 0.25 : 0.15, dashArray: '4,4'
+        });
+        rect.on('click', function(e){ L.DomEvent.stopPropagation(e); selectProj(p); });
+        rect.bindTooltip('<b>'+esc(p.name)+'</b><br/>'+cfg.label+(p.mw?' · '+p.mw.toFixed(2)+' MW':''));
+        bdLyr.addLayer(rect);
+      }
+    }
+
+    if(showMk && !isNaN(p.clat) && !isNaN(p.clon)){
+      var baseR = Math.max(3, Math.min(9, 3 + Math.sqrt(p.mw || 0) * 0.4));
+      var mk = L.circleMarker([p.clat,p.clon],{
+          radius: isSel ? baseR + 4 : baseR,
+          color: isSel ? '#ffffff' : cfg.color, weight: isSel ? 2.5 : 1,
+          fillColor: cfg.color, fillOpacity: isSel ? 1 : 0.8, zIndexOffset: isSel ? 1000 : 0
+      });
+      mk.bindPopup('<div style="min-width:195px"><b>'+esc(p.name)+'</b><br/><span style="color:'+cfg.color+';font-size:.6rem;font-weight:700">'+cfg.label+'</span><div style="margin-top:6px;font-size:.72rem;color:var(--t2)">'+(p.mw?'<b style="color:var(--t1)">'+p.mw.toFixed(2)+' MW</b><br/>':'')+(p.district!=='—'?'📍 '+esc(p.district)+'<br/>':'')+(!isNaN(p.clat)?'🌐 '+p.clat.toFixed(4)+'°N, '+p.clon.toFixed(4)+'°E':'')+'</div></div>');
+      mk.on('click', function(e){ L.DomEvent.stopPropagation(e); selectProj(p); });
+      markerMap[p.name + '|' + p.stage] = mk; mkLyr.addLayer(mk);
+    }
+  });
+}
+
+function selectProj(p){
+  SEL = p; renderMap();
+  if(!isNaN(p.clat) && !isNaN(p.clon)){
+    map.setView([p.clat,p.clon], 12, {animate:true});
+    var mk = markerMap[p.name + '|' + p.stage];
+    if(mk) setTimeout(function(){ mk.openPopup(); }, 300);
+  }
+  document.querySelectorAll('#tbody tr').forEach(function(r){
+    if(r.dataset.key === (p.name + '|' + p.stage)){
+      r.classList.add('sel'); r.scrollIntoView({behavior:'smooth',block:'nearest'});
+    } else { r.classList.remove('sel'); }
+  });
+  renderDetail(p);
+  document.getElementById('map-sb').textContent = p.name + ' · ' + (SCFG[p.stage] ? SCFG[p.stage].label : '') + (p.mw ? ' · ' + p.mw.toFixed(2) + ' MW' : '');
+}
+
+function renderDetail(p){
+  var cfg = SCFG[p.stage];
+  var html = '<div class="det-head"><div class="det-name">'+esc(p.name)+'</div><span class="det-tag" style="background:rgba(255,255,255,.07);color:'+cfg.color+'">'+cfg.label+'</span></div><div class="det-sect">Project Details</div><table class="det-table">';
+  var row = function(l,v,c){ return '<tr><th>'+esc(l)+'</th><td'+(c?' class="'+c+'"':'')+'>'+esc(String(v||'—'))+'</td></tr>'; };
+  html += row('Capacity (MW)', p.mw ? p.mw.toFixed(3) + ' MW' : '—', 'big')
+       + row('Stage', cfg.label)
+       + row('River', p.river)
+       + row('District', p.district)
+       + row('Province', p.province)
+       + row('Promoter', p.promoter)
+       + row('Lic / App No', p.licno)
+       + row('Issue Date', p.issue)
+       + row('Validity', p.validity)
+       + row('Address', p.address)
+       + '</table>';
+  if(!isNaN(p.clat)) html += '<a class="det-gmaps" href="https://maps.google.com/?q='+p.clat+','+p.clon+'" target="_blank">⊕ Open centre in Google Maps ↗</a>';
+  document.getElementById('det').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CHARTS
+   ═══════════════════════════════════════════════════════════ */
+function renderCharts(){
+  var sc={}, mwc={}, dm={};
+  Object.keys(SCFG).forEach(function(k){ sc[k]=0; mwc[k]=0; });
+
+  FILT.forEach(function(p){
+    if(sc[p.stage] !== undefined){ sc[p.stage]++; mwc[p.stage] += p.mw; }
+    var d = p.district && p.district !== '—' ? p.district.split(',')[0].trim() : 'Unknown';
+    dm[d] = (dm[d] || 0) + 1;
+  });
+
+  var stgKeys = Object.keys(SCFG);
+  var stgLabels = stgKeys.map(function(k){ return SCFG[k].label; });
+  var stgColors = stgKeys.map(function(k){ return SCFG[k].color; });
+  var scData = stgKeys.map(function(k){ return sc[k]; });
+  var mwcData = stgKeys.map(function(k){ return Math.round(mwc[k]); });
+
+  if(cInstances.pie) cInstances.pie.destroy();
+  cInstances.pie = new Chart(document.getElementById('chartStagePie'), {
+    type: 'pie',
+    data: { labels: stgLabels, datasets:[{ data: scData, backgroundColor: stgColors, borderWidth: 1, borderColor: 'var(--p1)' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {font: {size: 10, color: Chart.defaults.color}} } } }
+  });
+
+  if(cInstances.barMW) cInstances.barMW.destroy();
+  cInstances.barMW = new Chart(document.getElementById('chartMwBar'), {
+    type: 'bar',
+    data: { labels: stgLabels.map(function(l){ return l.replace(' License','').replace('App. ','A.'); }), datasets:[{ label: 'Total MW', data: mwcData, backgroundColor: stgColors, borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { x: { ticks:{color:Chart.defaults.color}, grid: { display: false } },
+                y: { ticks:{color:Chart.defaults.color}, grid: gridConfig, beginAtZero: true } },
+      plugins: { legend: { display: false } } }
+  });
+
+  var dtop = Object.entries(dm).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 7);
+  if(cInstances.barDist) cInstances.barDist.destroy();
+  cInstances.barDist = new Chart(document.getElementById('chartDistBar'), {
+    type: 'bar',
+    data: {
+      labels: dtop.map(function(d){ return d[0].length > 10 ? d[0].substring(0,10)+'..' : d[0]; }),
+      datasets:[{ label: 'Projects', data: dtop.map(function(d){ return d[1]; }), backgroundColor: 'var(--acc2)', borderRadius: 3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { x: { ticks:{color:Chart.defaults.color}, grid: { display: false } },
+                y: { ticks:{color:Chart.defaults.color}, grid: gridConfig, beginAtZero: true } },
+      plugins: { legend: { display: false } } }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EVENTS
+   ═══════════════════════════════════════════════════════════ */
+function bindEvs(){
+  document.getElementById('fq').addEventListener('input', deb(applyFilters, 150));
+  document.getElementById('fmin').addEventListener('input', function(){ MWMIN = +this.value || 0; applyFilters(); });
+  document.getElementById('fmax').addEventListener('input', function(){ MWMAX = +this.value || Infinity; applyFilters(); });
+
+  document.querySelectorAll('.sg').forEach(function(b){
+    b.addEventListener('click', function(){
+      SON[b.dataset.s] = SON[b.dataset.s] ? 0 : 1;
+      b.classList.toggle('on', !!SON[b.dataset.s]);
+      applyFilters();
+    });
+  });
+  document.querySelectorAll('.pv').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.pv').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); PROV = b.dataset.pv; applyFilters();
+    });
+  });
+  document.querySelectorAll('.mwq').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.mwq').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var v = b.dataset.mw;
+      if(v === 'all'){ MWMIN = 0; MWMAX = Infinity; document.getElementById('fmin').value = ''; document.getElementById('fmax').value = ''; }
+      else { var p = v.split(','); MWMIN = +p[0]; MWMAX = +p[1]; document.getElementById('fmin').value = p[0]; document.getElementById('fmax').value = p[1]; }
+      applyFilters();
+    });
+  });
+  document.querySelectorAll('table.dt th[data-col]').forEach(function(th){
+    th.addEventListener('click', function(){
+      var c = th.dataset.col;
+      if(SCOL === c) SDIR = SDIR === 'asc' ? 'desc' : 'asc';
+      else { SCOL = c; SDIR = 'asc'; }
+      document.querySelectorAll('table.dt th').forEach(function(x){ x.className = 'thn'; });
+      th.className = SDIR === 'asc' ? 'tha' : 'thd';
+      renderTable();
+    });
+  });
+  dragH(document.getElementById('vh-l'), function(dx){
+    var el = document.getElementById('lp');
+    el.style.width = Math.max(155, Math.min(480, el.offsetWidth + dx)) + 'px';
+    map.invalidateSize();
+    Object.keys(cInstances).forEach(function(k){ if(cInstances[k]) cInstances[k].resize(); });
+  });
+  dragH(document.getElementById('vh-r'), function(dx){
+    var el = document.getElementById('rp');
+    el.style.width = Math.max(200, Math.min(480, el.offsetWidth - dx)) + 'px';
+    map.invalidateSize();
+    Object.keys(cInstances).forEach(function(k){ if(cInstances[k]) cInstances[k].resize(); });
+  });
+  dragV(document.getElementById('hh'), function(dy){
+    var el = document.getElementById('tp');
+    el.style.height = Math.max(60, Math.min(window.innerHeight - 200, el.offsetHeight - dy)) + 'px';
+    map.invalidateSize();
+  });
+}
+function dragH(el, fn){
+  var on=false, lx=0;
+  el.addEventListener('mousedown', function(e){ on=true; lx=e.clientX; el.classList.add('on'); document.body.style.cssText='cursor:col-resize;user-select:none'; e.preventDefault(); });
+  document.addEventListener('mousemove', function(e){ if(!on) return; fn(e.clientX - lx); lx = e.clientX; });
+  document.addEventListener('mouseup', function(){ if(on){ on=false; el.classList.remove('on'); document.body.style.cssText=''; } });
+}
+function dragV(el, fn){
+  var on=false, ly=0;
+  el.addEventListener('mousedown', function(e){ on=true; ly=e.clientY; el.classList.add('on'); document.body.style.cssText='cursor:row-resize;user-select:none'; e.preventDefault(); });
+  document.addEventListener('mousemove', function(e){ if(!on) return; fn(e.clientY - ly); ly = e.clientY; });
+  document.addEventListener('mouseup', function(){ if(on){ on=false; el.classList.remove('on'); document.body.style.cssText=''; } });
+}
+
+window.resetAll = function(){
+  document.getElementById('fq').value = '';
+  document.getElementById('fmin').value = '';
+  document.getElementById('fmax').value = '';
+  MWMIN = 0; MWMAX = Infinity;
+  Object.keys(SON).forEach(function(k){ SON[k] = 1; });
+  document.querySelectorAll('.sg').forEach(function(b){ b.classList.add('on'); });
+  PROV = 'all';
+  document.querySelectorAll('.pv').forEach(function(b){ b.classList.toggle('on', b.dataset.pv === 'all'); });
+  document.querySelectorAll('.mwq').forEach(function(b){ b.classList.toggle('on', b.dataset.mw === 'all'); });
+  applyFilters();
+};
+
+window.exportCSV = function(){
+  var r = [['Project','MW','Stage','Province','District','River','Promoter','Lic/App No','Issue Date','Validity','Lat N Start','Lat N End','Lon E Start','Lon E End'].join(',')];
+  FILT.forEach(function(p){
+    r.push([p.name, p.mw, SCFG[p.stage] ? SCFG[p.stage].label : '', p.province, p.district, p.river, p.promoter, p.licno, p.issue, p.validity, fDec(p.lat1), fDec(p.lat2), fDec(p.lon1), fDec(p.lon2)]
+      .map(function(v){ return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','));
+  });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([r.join('\n')], {type:'text/csv'}));
+  a.download = 'nepal-hydro-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+};
+
+function esc(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function deb(fn, ms){ var t; return function(){ clearTimeout(t); t = setTimeout(fn, ms); }; }
+
+/* ═══════════════════════════════════════════════════════════
+   STARTUP
+   ═══════════════════════════════════════════════════════════ */
 function startApp(){
-  if (window._hydroStarted) return;
+  if(window._hydroStarted) return;
   window._hydroStarted = true;
+
   initTheme();
   bindEvs();
   loadCache();
 
-  if (ALL.length > 0) {
-    // Instant load from cache, then refresh in background
+  if(ALL.length > 0){
+    // Show cached data immediately, refresh in background
     updateSyncStatus('CACHED');
-    SRCS.forEach(function(s){ STAT[s.id] = 'ok (cache)'; });
+    SRCS.forEach(function(s){ STAT[s.id] = 'ok'; });
     renderSrcList(); updateKPIs(); applyFilters();
     setTimeout(function(){ map.invalidateSize(); }, 200);
-    setTimeout(function(){ window.boot(true); }, 400);
+    setTimeout(function(){ window.boot(); }, 400);
   } else {
     updateSyncStatus('SEEDING');
-    window.boot(true);
+    window.boot();
   }
 }
 
-if (document.readyState === 'loading') {
+if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', startApp);
 } else {
   startApp();
 }
+
+})();
 </script>
 </body>
 </html>
