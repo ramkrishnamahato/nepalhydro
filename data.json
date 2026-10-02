@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-01T22:21:22.856Z",
+  "updated": "2026-10-02T04:07:01.850Z",
   "total": 569,
   "byStage": {
     "survey": 37,
@@ -201,7 +201,7 @@
     },
     {
       "sourceId": "s1",
-      "name": "Ranma Khola HPP",
+      "name": "Ranma Khola PRoR HPP",
       "mw": 36.6,
       "stage": "survey",
       "licno": "1167",
